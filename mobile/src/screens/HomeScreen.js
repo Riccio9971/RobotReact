@@ -8,7 +8,7 @@ import ParticleField from '../components/ParticleField';
 import TypewriterText from '../components/TypewriterText';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
-const SCENE_SIZE = Math.min(SCREEN_W * 0.85, 380);
+const SCENE_SIZE = Math.min(SCREEN_W * 0.82, 360);
 
 const HomeScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
@@ -133,13 +133,14 @@ const styles = StyleSheet.create({
   },
   orbitalLayer: {
     ...StyleSheet.absoluteFillObject,
-    zIndex: 1,
+    zIndex: 2,
   },
   centerColumn: {
     ...StyleSheet.absoluteFillObject,
-    zIndex: 2,
+    zIndex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    pointerEvents: 'none',
   },
 });
 

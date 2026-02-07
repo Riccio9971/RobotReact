@@ -1,8 +1,11 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Text, Pressable, Animated, StyleSheet, Dimensions } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, Pressable, Animated, StyleSheet, Dimensions, PanResponder } from 'react-native';
+import * as Haptics from 'expo-haptics';
 
 const { width: SCREEN_W } = Dimensions.get('window');
-const SCENE_SIZE = Math.min(SCREEN_W * 0.85, 380);
+const SCENE_SIZE = Math.min(SCREEN_W * 0.82, 360);
+const ITEM_SIZE = Math.min(72, SCREEN_W * 0.18);
+const ORBIT_RADIUS = SCENE_SIZE * 0.40;
 
 const menuItems = [
   { id: 'math', label: 'Matematica', emoji: '🔢', color: '#ff6b35' },
@@ -13,72 +16,32 @@ const menuItems = [
   { id: 'music', label: 'Musica', emoji: '🎵', color: '#ffaa00' },
 ];
 
-const OrbitItem = ({ item, index, total, onPress }) => {
-  const scaleAnim = useRef(new Animated.Value(0)).current;
-  const angleDeg = (360 / total) * index;
-  const angleRad = (angleDeg * Math.PI) / 180;
-  const radius = SCENE_SIZE * 0.42;
+const OrbitalMenu = ({ onSubjectClick }) => {
+  const rotationRef = useRef(0);
+  const [rotation, setRotation] = useState(0);
+  const lastAngleRef = useRef(null);
+  const velocityRef = useRef(0);
+  const animFrameRef = useRef(null);
+  const ringAnim = useRef(new Animated.Value(0)).current;
+  const entranceAnims = useRef(menuItems.map(() => new Animated.Value(0))).current;
+  const tapScaleAnims = useRef(menuItems.map(() => new Animated.Value(1))).current;
+  const isDragging = useRef(false);
+  const dragDistance = useRef(0);
+
   const centerX = SCENE_SIZE / 2;
   const centerY = SCENE_SIZE / 2;
-  const x = centerX + Math.sin(angleRad) * radius - 40;
-  const y = centerY - Math.cos(angleRad) * radius - 40;
 
   useEffect(() => {
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      delay: index * 100,
-      useNativeDriver: true,
-      tension: 200,
-      friction: 15,
-    }).start();
-  }, []);
+    entranceAnims.forEach((anim, i) => {
+      Animated.spring(anim, {
+        toValue: 1,
+        delay: i * 80,
+        useNativeDriver: true,
+        tension: 200,
+        friction: 15,
+      }).start();
+    });
 
-  const handlePressIn = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 0.9,
-      useNativeDriver: true,
-      tension: 300,
-      friction: 10,
-    }).start();
-  };
-
-  const handlePressOut = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      useNativeDriver: true,
-      tension: 200,
-      friction: 15,
-    }).start();
-  };
-
-  return (
-    <Animated.View
-      style={[
-        styles.orbitItem,
-        {
-          left: x,
-          top: y,
-          transform: [{ scale: scaleAnim }],
-        },
-      ]}
-    >
-      <Pressable
-        onPress={() => onPress(item.id)}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        style={styles.orbitItemInner}
-      >
-        <Text style={styles.orbitEmoji}>{item.emoji}</Text>
-        <Text style={[styles.orbitLabel, { color: item.color }]}>{item.label}</Text>
-      </Pressable>
-    </Animated.View>
-  );
-};
-
-const OrbitalMenu = ({ onSubjectClick }) => {
-  const ringAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
     Animated.loop(
       Animated.timing(ringAnim, {
         toValue: 1,
@@ -86,7 +49,73 @@ const OrbitalMenu = ({ onSubjectClick }) => {
         useNativeDriver: true,
       })
     ).start();
+
+    return () => {
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+    };
   }, []);
+
+  const startMomentum = () => {
+    const decay = () => {
+      velocityRef.current *= 0.95;
+      if (Math.abs(velocityRef.current) < 0.1) {
+        velocityRef.current = 0;
+        return;
+      }
+      rotationRef.current += velocityRef.current;
+      setRotation(rotationRef.current);
+      animFrameRef.current = requestAnimationFrame(decay);
+    };
+    animFrameRef.current = requestAnimationFrame(decay);
+  };
+
+  const getAngle = (x, y) => {
+    const dx = x - centerX;
+    const dy = y - centerY;
+    return Math.atan2(dy, dx) * (180 / Math.PI);
+  };
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, gesture) => {
+        return Math.abs(gesture.dx) > 5 || Math.abs(gesture.dy) > 5;
+      },
+      onPanResponderGrant: (evt) => {
+        if (animFrameRef.current) {
+          cancelAnimationFrame(animFrameRef.current);
+        }
+        velocityRef.current = 0;
+        isDragging.current = false;
+        dragDistance.current = 0;
+        const touch = evt.nativeEvent;
+        lastAngleRef.current = getAngle(touch.locationX, touch.locationY);
+      },
+      onPanResponderMove: (evt) => {
+        const touch = evt.nativeEvent;
+        const currentAngle = getAngle(touch.locationX, touch.locationY);
+        if (lastAngleRef.current !== null) {
+          let delta = currentAngle - lastAngleRef.current;
+          if (delta > 180) delta -= 360;
+          if (delta < -180) delta += 360;
+          dragDistance.current += Math.abs(delta);
+          if (dragDistance.current > 3) {
+            isDragging.current = true;
+          }
+          rotationRef.current += delta;
+          velocityRef.current = delta;
+          setRotation(rotationRef.current);
+        }
+        lastAngleRef.current = currentAngle;
+      },
+      onPanResponderRelease: () => {
+        lastAngleRef.current = null;
+        if (Math.abs(velocityRef.current) > 0.5) {
+          startMomentum();
+        }
+      },
+    })
+  ).current;
 
   const ringRotation = ringAnim.interpolate({
     inputRange: [0, 1],
@@ -94,29 +123,106 @@ const OrbitalMenu = ({ onSubjectClick }) => {
   });
 
   return (
-    <View style={[styles.container, { width: SCENE_SIZE, height: SCENE_SIZE }]}>
-      {/* Decorative ring */}
+    <View
+      style={[styles.container, { width: SCENE_SIZE, height: SCENE_SIZE }]}
+      {...panResponder.panHandlers}
+    >
+      {/* Decorative outer ring */}
       <Animated.View
         style={[
           styles.ring,
           {
-            width: SCENE_SIZE * 0.96,
-            height: SCENE_SIZE * 0.96,
+            width: SCENE_SIZE * 0.94,
+            height: SCENE_SIZE * 0.94,
+            borderRadius: SCENE_SIZE * 0.47,
             transform: [{ rotate: ringRotation }],
           },
         ]}
       />
 
+      {/* Orbit path */}
+      <View
+        style={[
+          styles.orbitPath,
+          {
+            width: ORBIT_RADIUS * 2 + ITEM_SIZE,
+            height: ORBIT_RADIUS * 2 + ITEM_SIZE,
+            borderRadius: ORBIT_RADIUS + ITEM_SIZE / 2,
+          },
+        ]}
+      />
+
       {/* Menu items */}
-      {menuItems.map((item, index) => (
-        <OrbitItem
-          key={item.id}
-          item={item}
-          index={index}
-          total={menuItems.length}
-          onPress={onSubjectClick}
-        />
-      ))}
+      {menuItems.map((item, index) => {
+        const angleDeg = (360 / menuItems.length) * index + rotation;
+        const angleRad = (angleDeg * Math.PI) / 180;
+        const x = centerX + Math.sin(angleRad) * ORBIT_RADIUS - ITEM_SIZE / 2;
+        const y = centerY - Math.cos(angleRad) * ORBIT_RADIUS - ITEM_SIZE / 2;
+
+        const handlePressIn = () => {
+          Animated.spring(tapScaleAnims[index], {
+            toValue: 0.85,
+            useNativeDriver: true,
+            tension: 300,
+            friction: 10,
+          }).start();
+        };
+
+        const handlePressOut = () => {
+          Animated.spring(tapScaleAnims[index], {
+            toValue: 1,
+            useNativeDriver: true,
+            tension: 200,
+            friction: 15,
+          }).start();
+        };
+
+        const handlePress = () => {
+          if (!isDragging.current) {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            onSubjectClick(item.id);
+          }
+        };
+
+        return (
+          <Animated.View
+            key={item.id}
+            style={[
+              styles.orbitItem,
+              {
+                width: ITEM_SIZE,
+                height: ITEM_SIZE,
+                borderRadius: ITEM_SIZE / 2,
+                left: x,
+                top: y,
+                transform: [
+                  { scale: Animated.multiply(entranceAnims[index], tapScaleAnims[index]) },
+                ],
+              },
+            ]}
+          >
+            <Pressable
+              onPress={handlePress}
+              onPressIn={handlePressIn}
+              onPressOut={handlePressOut}
+              style={[
+                styles.orbitItemInner,
+                {
+                  width: ITEM_SIZE,
+                  height: ITEM_SIZE,
+                  borderRadius: ITEM_SIZE / 2,
+                  borderColor: item.color + '40',
+                },
+              ]}
+            >
+              <Text style={[styles.orbitEmoji, { fontSize: ITEM_SIZE * 0.38 }]}>{item.emoji}</Text>
+              <Text style={[styles.orbitLabel, { color: item.color, fontSize: Math.max(6, ITEM_SIZE * 0.09) }]}>
+                {item.label}
+              </Text>
+            </Pressable>
+          </Animated.View>
+        );
+      })}
     </View>
   );
 };
@@ -127,34 +233,37 @@ const styles = StyleSheet.create({
   },
   ring: {
     position: 'absolute',
-    top: '2%',
-    left: '2%',
-    borderRadius: 9999,
+    top: '3%',
+    left: '3%',
+    borderWidth: 1.5,
+    borderColor: 'rgba(0, 240, 255, 0.1)',
+    borderStyle: 'dashed',
+  },
+  orbitPath: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    marginTop: -(ORBIT_RADIUS + ITEM_SIZE / 2),
+    marginLeft: -(ORBIT_RADIUS + ITEM_SIZE / 2),
     borderWidth: 1,
-    borderColor: 'rgba(0, 240, 255, 0.08)',
+    borderColor: 'rgba(0, 240, 255, 0.05)',
+    borderStyle: 'dotted',
   },
   orbitItem: {
     position: 'absolute',
-    width: 80,
-    height: 80,
   },
   orbitItemInner: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
+    gap: 2,
   },
   orbitEmoji: {
-    fontSize: 28,
+    // fontSize set dynamically
   },
   orbitLabel: {
-    fontSize: 7,
-    fontWeight: '600',
+    fontWeight: '700',
     letterSpacing: 0.5,
     textTransform: 'uppercase',
   },

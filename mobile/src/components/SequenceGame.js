@@ -1,10 +1,11 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { View, Text, Pressable, Animated, StyleSheet } from 'react-native';
+import { View, Text, Pressable, Animated, StyleSheet, Dimensions } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import OwlTeacher from './OwlTeacher';
 import GameComplete from './GameComplete';
-import { GameHeader, FeedbackOverlay } from './CountingGame';
+import { GameHeader, ConfettiOverlay } from './CountingGame';
 
+const { width: SCREEN_W } = Dimensions.get('window');
 const dollEmojis = ['🎎', '👧', '💃', '🧝‍♀️', '🧚', '🎀', '👸', '🌸'];
 const dollColors = ['#ff6b9d', '#c471ed', '#f7797d', '#fbc2eb', '#a18cd1', '#e8a0bf', '#ff9a9e', '#fad0c4'];
 const TOTAL_ROUNDS = 5;
@@ -28,6 +29,7 @@ function generateRound(roundNum) {
     number: num,
     emoji: dollEmojis[(num - 1) % dollEmojis.length],
     color: dollColors[(num - 1) % dollColors.length],
+    bounceDelay: Math.random() * 600,
   }));
 
   return { count, items, correctOrder: numbers };
@@ -81,11 +83,15 @@ const SequenceGame = ({ student, onBack }) => {
     return <GameComplete student={student} score={score} onBack={onBack} />;
   }
 
+  // Calculate responsive slot size
+  const maxSlotWidth = (SCREEN_W - 64 - (roundData.count - 1) * 12) / roundData.count;
+  const slotW = Math.min(74, maxSlotWidth);
+  const slotH = slotW * 1.2;
+
   return (
     <View style={styles.container}>
       <GameHeader round={round} score={score} onBack={onBack} />
 
-      {/* Owl + speech */}
       <View style={styles.owlSection}>
         <View style={styles.speechBubble}>
           <Text style={styles.speechText}>Metti in fila! 🎎 Tocca 1, poi 2, poi 3...</Text>
@@ -104,12 +110,16 @@ const SequenceGame = ({ student, onBack }) => {
           return (
             <View
               key={`${round}-slot-${num}`}
-              style={[styles.slot, isPlaced && { borderStyle: 'solid', borderColor: item.color, backgroundColor: 'rgba(255,255,255,0.85)' }]}
+              style={[
+                styles.slot,
+                { width: slotW, height: slotH },
+                isPlaced && { borderStyle: 'solid', borderColor: item.color, backgroundColor: 'rgba(255,255,255,0.85)' },
+              ]}
             >
               {isPlaced ? (
                 <SlotContent emoji={item.emoji} num={num} />
               ) : (
-                <Text style={styles.slotPlaceholder}>{num}</Text>
+                <Text style={[styles.slotPlaceholder, { fontSize: slotW * 0.3 }]}>{num}</Text>
               )}
             </View>
           );
@@ -133,8 +143,7 @@ const SequenceGame = ({ student, onBack }) => {
         })}
       </View>
 
-      {/* Feedback */}
-      {transitioning && <FeedbackOverlay type="correct" />}
+      {transitioning && <ConfettiOverlay type="correct" />}
     </View>
   );
 };
@@ -173,6 +182,7 @@ const SequenceItem = ({ item, wrong, onPress, delay }) => {
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const bounceAnim = useRef(new Animated.Value(0)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
+  const wiggleAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.spring(scaleAnim, {
@@ -183,12 +193,14 @@ const SequenceItem = ({ item, wrong, onPress, delay }) => {
       friction: 12,
     }).start();
 
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(bounceAnim, { toValue: -8, duration: 1100, useNativeDriver: true }),
-        Animated.timing(bounceAnim, { toValue: 0, duration: 1100, useNativeDriver: true }),
-      ])
-    ).start();
+    setTimeout(() => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(bounceAnim, { toValue: -8, duration: 900 + Math.random() * 400, useNativeDriver: true }),
+          Animated.timing(bounceAnim, { toValue: 0, duration: 900 + Math.random() * 400, useNativeDriver: true }),
+        ])
+      ).start();
+    }, item.bounceDelay);
   }, []);
 
   useEffect(() => {
@@ -202,19 +214,28 @@ const SequenceItem = ({ item, wrong, onPress, delay }) => {
     }
   }, [wrong]);
 
+  const handlePress = () => {
+    Animated.sequence([
+      Animated.timing(wiggleAnim, { toValue: -10, duration: 60, useNativeDriver: true }),
+      Animated.timing(wiggleAnim, { toValue: 10, duration: 60, useNativeDriver: true }),
+      Animated.timing(wiggleAnim, { toValue: 0, duration: 60, useNativeDriver: true }),
+    ]).start();
+    onPress();
+  };
+
   return (
     <Animated.View
       style={{
         transform: [
           { scale: scaleAnim },
           { translateY: bounceAnim },
-          { translateX: shakeAnim },
+          { translateX: Animated.add(shakeAnim, wiggleAnim) },
         ],
       }}
     >
       <Pressable
         style={[styles.item, { borderColor: item.color }]}
-        onPress={onPress}
+        onPress={handlePress}
       >
         <Text style={styles.itemEmoji}>{item.emoji}</Text>
         <Text style={styles.itemNum}>{item.number}</Text>
@@ -267,7 +288,6 @@ const styles = StyleSheet.create({
   owlMini: {
     width: 65,
   },
-  // Slots
   slots: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -276,8 +296,6 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   slot: {
-    width: 74,
-    height: 90,
     borderWidth: 3,
     borderStyle: 'dashed',
     borderColor: 'rgba(0, 0, 0, 0.15)',
@@ -291,31 +309,29 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   slotEmoji: {
-    fontSize: 28,
+    fontSize: 26,
   },
   slotNum: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
     color: '#333',
   },
   slotPlaceholder: {
-    fontSize: 22,
     fontWeight: '700',
     color: 'rgba(0, 0, 0, 0.12)',
   },
-  // Items
   items: {
     flex: 1,
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
     alignContent: 'center',
-    gap: 16,
+    gap: 18,
     padding: 16,
   },
   item: {
-    width: 86,
-    height: 100,
+    width: 82,
+    height: 96,
     borderWidth: 4,
     borderRadius: 22,
     backgroundColor: 'white',
@@ -329,10 +345,10 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   itemEmoji: {
-    fontSize: 30,
+    fontSize: 28,
   },
   itemNum: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '700',
     color: '#333',
   },
