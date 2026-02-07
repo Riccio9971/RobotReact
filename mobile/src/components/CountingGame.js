@@ -200,7 +200,6 @@ const CountingGame = ({ student, onBack }) => {
         ))}
       </View>
 
-      {feedback && <ConfettiOverlay type={feedback} />}
     </View>
   );
 };
@@ -229,128 +228,6 @@ export const GameHeader = ({ round, score, onBack }) => (
     </View>
   </View>
 );
-
-const ConfettiPiece = ({ delay, startX, color, size }) => {
-  const fallAnim = useRef(new Animated.Value(0)).current;
-  const swayAnim = useRef(new Animated.Value(0)).current;
-  const spinAnim = useRef(new Animated.Value(0)).current;
-  const opacityAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    const swayAmount = 30 + Math.random() * 60;
-    const duration = 1200 + Math.random() * 800;
-
-    setTimeout(() => {
-      Animated.parallel([
-        Animated.timing(fallAnim, {
-          toValue: 1,
-          duration,
-          useNativeDriver: true,
-        }),
-        Animated.sequence([
-          Animated.timing(opacityAnim, { toValue: 1, duration: 100, useNativeDriver: true }),
-          Animated.timing(opacityAnim, { toValue: 1, duration: duration - 300, useNativeDriver: true }),
-          Animated.timing(opacityAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
-        ]),
-        Animated.loop(
-          Animated.sequence([
-            Animated.timing(swayAnim, { toValue: swayAmount, duration: 300, useNativeDriver: true }),
-            Animated.timing(swayAnim, { toValue: -swayAmount, duration: 300, useNativeDriver: true }),
-          ])
-        ),
-        Animated.timing(spinAnim, {
-          toValue: 1,
-          duration,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }, delay);
-  }, []);
-
-  const translateY = fallAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [-40, SCREEN_H * 0.6],
-  });
-
-  const rotateDeg = 360 + Math.random() * 720;
-  const rotate = spinAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', `${rotateDeg}deg`],
-  });
-
-  return (
-    <Animated.View
-      style={[
-        styles.confettiPiece,
-        {
-          left: startX,
-          width: size,
-          height: size * (0.4 + Math.random() * 0.6),
-          backgroundColor: color,
-          borderRadius: Math.random() > 0.5 ? size / 2 : 2,
-          opacity: opacityAnim,
-          transform: [
-            { translateY },
-            { translateX: swayAnim },
-            { rotate },
-          ],
-        },
-      ]}
-    />
-  );
-};
-
-export const ConfettiOverlay = ({ type }) => {
-  const scaleAnim = useRef(new Animated.Value(0)).current;
-  const confettiColors = ['#ff6b35', '#7b2fff', '#00ff88', '#ff2d7b', '#00f0ff', '#ffaa00', '#ff4757', '#2ed573'];
-
-  useEffect(() => {
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      useNativeDriver: true,
-      tension: 200,
-      friction: 12,
-    }).start();
-
-    if (type === 'correct') {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } else {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-    }
-  }, []);
-
-  if (type === 'correct') {
-    const pieces = Array.from({ length: 30 }, (_, i) => ({
-      id: i,
-      delay: Math.random() * 300,
-      startX: Math.random() * SCREEN_W,
-      color: confettiColors[Math.floor(Math.random() * confettiColors.length)],
-      size: 6 + Math.random() * 10,
-    }));
-
-    return (
-      <View style={styles.confettiContainer} pointerEvents="none">
-        {pieces.map((p) => (
-          <ConfettiPiece key={p.id} {...p} />
-        ))}
-        <Animated.View style={[styles.feedbackCenter, { transform: [{ scale: scaleAnim }] }]}>
-          <Text style={styles.feedbackStar}>⭐</Text>
-        </Animated.View>
-      </View>
-    );
-  }
-
-  return (
-    <View style={styles.confettiContainer} pointerEvents="none">
-      <Animated.View style={[styles.feedbackCenter, { transform: [{ scale: scaleAnim }] }]}>
-        <Text style={styles.feedbackWrong}>💪</Text>
-        <Text style={styles.feedbackWrongText}>Riprova!</Text>
-      </Animated.View>
-    </View>
-  );
-};
-
-export const FeedbackOverlay = ConfettiOverlay;
 
 const AnswerButton = ({ num, correct, onPress, delay }) => {
   const anim = useRef(new Animated.Value(0)).current;
@@ -566,39 +443,6 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 28,
     fontWeight: '700',
-  },
-  confettiContainer: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 100,
-    overflow: 'hidden',
-  },
-  confettiPiece: {
-    position: 'absolute',
-    top: 0,
-  },
-  feedbackCenter: {
-    position: 'absolute',
-    top: '40%',
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-  },
-  feedbackStar: {
-    fontSize: 60,
-  },
-  feedbackWrong: {
-    fontSize: 50,
-  },
-  feedbackWrongText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#ff6b35',
-    marginTop: 4,
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 20,
-    overflow: 'hidden',
   },
 });
 

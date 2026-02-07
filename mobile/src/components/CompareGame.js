@@ -3,7 +3,7 @@ import { View, Text, Pressable, Animated, StyleSheet, Dimensions } from 'react-n
 import * as Haptics from 'expo-haptics';
 import OwlTeacher from './OwlTeacher';
 import GameComplete from './GameComplete';
-import { GameHeader, ConfettiOverlay } from './CountingGame';
+import { GameHeader } from './CountingGame';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const animalEmojis = ['🐻', '🐰', '🦁', '🐸', '🐱', '🐶', '🐼', '🦊'];
@@ -215,7 +215,6 @@ const CompareGame = ({ student, onBack }) => {
         />
       </View>
 
-      {feedback && <ConfettiOverlay type={feedback} />}
     </View>
   );
 };

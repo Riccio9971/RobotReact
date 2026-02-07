@@ -3,7 +3,7 @@ import { View, Text, Pressable, Animated, StyleSheet, Dimensions } from 'react-n
 import * as Haptics from 'expo-haptics';
 import OwlTeacher from './OwlTeacher';
 import GameComplete from './GameComplete';
-import { GameHeader, ConfettiOverlay } from './CountingGame';
+import { GameHeader } from './CountingGame';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const ballEmojis = ['⚽', '🏀', '🔴', '🟡', '🟢', '🔵', '🟣', '🟠', '⚾', '🎾'];
@@ -32,7 +32,7 @@ function generateRound(roundNum) {
 const BallButton = ({ ball, selected, onPress }) => {
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const bounceAnim = useRef(new Animated.Value(0)).current;
-  const wiggleAnim = useRef(new Animated.Value(0)).current;
+  const popAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     Animated.spring(scaleAnim, {
@@ -55,8 +55,8 @@ const BallButton = ({ ball, selected, onPress }) => {
 
   const handlePress = () => {
     Animated.sequence([
-      Animated.timing(wiggleAnim, { toValue: 1.15, duration: 100, useNativeDriver: true }),
-      Animated.spring(wiggleAnim, { toValue: 1, useNativeDriver: true, tension: 300, friction: 10 }),
+      Animated.spring(popAnim, { toValue: 1.2, useNativeDriver: true, tension: 400, friction: 8 }),
+      Animated.spring(popAnim, { toValue: 1, useNativeDriver: true, tension: 200, friction: 12 }),
     ]).start();
     onPress(ball.id);
   };
@@ -64,7 +64,7 @@ const BallButton = ({ ball, selected, onPress }) => {
   return (
     <Animated.View style={{
       transform: [
-        { scale: Animated.multiply(scaleAnim, wiggleAnim.interpolate({ inputRange: [0, 1, 1.15], outputRange: [1, 1, 1.15] })) },
+        { scale: Animated.multiply(scaleAnim, popAnim) },
         { translateY: bounceAnim },
       ],
     }}>
@@ -166,7 +166,6 @@ const BalloonGame = ({ student, onBack }) => {
         </Pressable>
       </View>
 
-      {feedback && <ConfettiOverlay type={feedback} />}
     </View>
   );
 };
