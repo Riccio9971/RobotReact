@@ -1,11 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated } from 'react-native';
 import Svg, {
-  Defs, LinearGradient, Stop, Filter,
+  Defs, LinearGradient, Stop,
   Rect, Circle, Ellipse, Line, Path, G,
 } from 'react-native-svg';
 
-const AnimatedG = Animated.createAnimatedComponent(G);
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 const RobotFace = () => {
