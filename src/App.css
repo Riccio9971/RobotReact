@@ -233,16 +233,10 @@
   z-index: 100;
 }
 
-.orbit-item-icon {
-  width: 28px;
-  height: 28px;
-  opacity: 0.8;
-  transition: opacity 0.3s ease;
-  filter: drop-shadow(0 0 4px currentColor);
-}
-
-.orbit-item:hover .orbit-item-icon {
-  opacity: 1;
+.orbit-item-emoji {
+  font-size: 28px;
+  line-height: 1;
+  filter: drop-shadow(0 0 6px rgba(255,255,255,0.3));
 }
 
 .orbit-item-label {
@@ -392,7 +386,148 @@
     font-size: 6px;
   }
 
+  .orbit-item-emoji {
+    font-size: 22px;
+  }
+
   .orbit-item:hover .orbit-item-inner {
     transform: scale(1.1);
+  }
+}
+
+/* ===== MATH PAGE ===== */
+.math-page {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: linear-gradient(135deg, #fff5e6 0%, #ffe0f0 25%, #e0f0ff 50%, #e6ffe6 75%, #fff5e6 100%);
+  background-size: 400% 400%;
+  animation: mathBgShift 12s ease infinite;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: hidden;
+}
+
+@keyframes mathBgShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Floating numbers background */
+.math-floating-numbers {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.math-float-num {
+  position: absolute;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  user-select: none;
+}
+
+/* Back button */
+.math-back-btn {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50px;
+  padding: 10px 24px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.math-back-btn:hover {
+  background: rgba(255, 255, 255, 1);
+}
+
+/* Main content */
+.math-content {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: 16px;
+  padding: 80px 20px 40px;
+}
+
+.math-hero-emoji {
+  font-size: 5rem;
+  line-height: 1;
+  filter: drop-shadow(0 4px 12px rgba(255, 107, 53, 0.3));
+}
+
+.math-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: clamp(2rem, 6vw, 3.5rem);
+  font-weight: 800;
+  background: linear-gradient(135deg, #ff6b35, #ff2d7b, #7b2fff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-align: center;
+}
+
+.math-subtitle {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: clamp(1.1rem, 3vw, 1.5rem);
+  color: #555;
+  font-weight: 500;
+  text-align: center;
+}
+
+/* Number grid */
+.math-number-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  margin-top: 20px;
+  max-width: 450px;
+}
+
+.math-number-btn {
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  border: none;
+  background: var(--btn-color);
+  color: #fff;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  transition: box-shadow 0.2s;
+}
+
+.math-number-btn:hover {
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.25);
+}
+
+@media (max-width: 480px) {
+  .math-number-grid {
+    gap: 10px;
+  }
+
+  .math-number-btn {
+    width: 56px;
+    height: 56px;
+    font-size: 1.4rem;
+    border-radius: 14px;
   }
 }
