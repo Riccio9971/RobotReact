@@ -1,2 +1,390 @@
-.App { text-align: center; }
-.App-header { background-color: #282c34; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: calc(10px + 2vmin); color: white; }
+/* ===== MAIN APP ===== */
+.app {
+  width: 100vw;
+  height: 100vh;
+  background: radial-gradient(ellipse at 50% 50%, #0d0d1a 0%, #0a0a0f 60%, #050508 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Ambient light effects */
+.app::before {
+  content: '';
+  position: absolute;
+  top: 30%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(0, 240, 255, 0.03) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.app::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 240, 255, 0.1), transparent);
+}
+
+/* ===== CONTENT WRAPPER ===== */
+.content-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 10;
+  gap: 10px;
+}
+
+/* ===== ROBOT CONTAINER ===== */
+.robot-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ===== TYPEWRITER TEXT ===== */
+.typewriter-container {
+  text-align: center;
+  min-height: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: 5px;
+  margin-bottom: 10px;
+}
+
+.typewriter-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: clamp(1.2rem, 3vw, 2rem);
+  font-weight: 700;
+  background: linear-gradient(135deg, #00f0ff 0%, #7b2fff 50%, #ff2d7b 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.typewriter-subtitle {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: clamp(0.9rem, 2vw, 1.2rem);
+  color: rgba(224, 224, 255, 0.5);
+  font-weight: 300;
+  letter-spacing: 4px;
+  margin-top: 8px;
+}
+
+.cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: #00f0ff;
+  margin-left: 4px;
+  animation: cursorBlink 0.8s infinite;
+  vertical-align: text-bottom;
+  box-shadow: 0 0 8px #00f0ff;
+}
+
+@keyframes cursorBlink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+/* ===== ORBITAL MENU ===== */
+.orbital-wrapper {
+  position: relative;
+  width: clamp(320px, 70vmin, 520px);
+  height: clamp(320px, 70vmin, 520px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Orbital rings */
+.orbital-ring {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 240, 255, 0.06);
+  animation: ringRotate 60s linear infinite;
+}
+
+.orbital-ring:nth-child(2) {
+  width: 75%;
+  height: 75%;
+  border-color: rgba(123, 47, 255, 0.06);
+  animation-duration: 45s;
+  animation-direction: reverse;
+}
+
+.orbital-ring:nth-child(3) {
+  width: 50%;
+  height: 50%;
+  border-color: rgba(255, 45, 123, 0.06);
+  animation-duration: 30s;
+}
+
+@keyframes ringRotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Orbit path for items */
+.orbit-path {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  animation: orbitSpin 25s linear infinite;
+  transform-style: preserve-3d;
+}
+
+@keyframes orbitSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Individual orbit items */
+.orbit-item {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.orbit-item-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.orbit-item-inner::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0%,
+    rgba(0, 240, 255, 0.05) 25%,
+    transparent 50%,
+    rgba(123, 47, 255, 0.05) 75%,
+    transparent 100%
+  );
+  animation: innerSpin 4s linear infinite;
+  z-index: -1;
+}
+
+@keyframes innerSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.orbit-item:hover .orbit-item-inner {
+  background: rgba(0, 240, 255, 0.08);
+  border-color: rgba(0, 240, 255, 0.3);
+  box-shadow:
+    0 0 20px rgba(0, 240, 255, 0.15),
+    0 0 40px rgba(0, 240, 255, 0.05),
+    inset 0 0 20px rgba(0, 240, 255, 0.05);
+  transform: scale(1.15);
+}
+
+.orbit-item:hover {
+  z-index: 100;
+}
+
+.orbit-item-icon {
+  width: 28px;
+  height: 28px;
+  opacity: 0.8;
+  transition: opacity 0.3s ease;
+  filter: drop-shadow(0 0 4px currentColor);
+}
+
+.orbit-item:hover .orbit-item-icon {
+  opacity: 1;
+}
+
+.orbit-item-label {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 8px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: rgba(224, 224, 255, 0.6);
+  transition: color 0.3s ease;
+  white-space: nowrap;
+}
+
+.orbit-item:hover .orbit-item-label {
+  color: #00f0ff;
+}
+
+/* Counter-rotate items so they stay upright */
+.orbit-item-content {
+  animation: counterSpin 25s linear infinite;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+@keyframes counterSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-360deg); }
+}
+
+/* ===== SCAN LINE EFFECT ===== */
+.scanline {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 999;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.015) 2px,
+    rgba(0, 0, 0, 0.015) 4px
+  );
+}
+
+.scanline::after {
+  content: '';
+  position: absolute;
+  top: -100%;
+  left: 0;
+  right: 0;
+  height: 100%;
+  background: linear-gradient(
+    0deg,
+    transparent 0%,
+    rgba(0, 240, 255, 0.02) 50%,
+    transparent 100%
+  );
+  animation: scanDown 8s linear infinite;
+}
+
+@keyframes scanDown {
+  from { top: -100%; }
+  to { top: 200%; }
+}
+
+/* ===== VIGNETTE ===== */
+.vignette {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 998;
+  background: radial-gradient(ellipse at center, transparent 50%, rgba(0, 0, 0, 0.5) 100%);
+}
+
+/* ===== FLOATING PARTICLES (CSS) ===== */
+.css-particles {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+  overflow: hidden;
+}
+
+.css-particle {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: #00f0ff;
+  border-radius: 50%;
+  box-shadow: 0 0 6px #00f0ff, 0 0 12px rgba(0, 240, 255, 0.3);
+  animation: floatUp linear infinite;
+  opacity: 0;
+}
+
+@keyframes floatUp {
+  0% {
+    opacity: 0;
+    transform: translateY(100vh) scale(0);
+  }
+  10% {
+    opacity: 0.6;
+  }
+  90% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-10vh) scale(1);
+  }
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-height: 700px) {
+  .typewriter-container {
+    min-height: 50px;
+    margin-top: 0;
+    margin-bottom: 5px;
+  }
+
+  .orbital-wrapper {
+    width: clamp(260px, 50vmin, 400px);
+    height: clamp(260px, 50vmin, 400px);
+  }
+}
+
+@media (max-width: 480px) {
+  .orbit-item {
+    width: 64px;
+    height: 64px;
+    margin-left: -32px;
+    margin-top: -32px;
+  }
+
+  .orbit-item-icon {
+    width: 22px;
+    height: 22px;
+  }
+
+  .orbit-item-label {
+    font-size: 6px;
+  }
+}
