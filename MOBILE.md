@@ -1,469 +1,251 @@
-# Robot React — Versione Mobile iPhone
+# Robot React Native — App iOS per App Store
 
 ## Panoramica
 
-Questa guida documenta come preparare, testare e ottimizzare Robot React
-come **Progressive Web App (PWA)** per iPhone. L'app sarà installabile
-sulla home screen dell'iPhone, funzionerà in modalità standalone (senza
-la barra di Safari) e sarà ottimizzata per l'interazione touch dei bambini.
+Versione **React Native + Expo** di Robot React, pensata per essere pubblicata
+sull'**App Store** come app nativa per iPhone. L'app usa componenti nativi
+(non è una web view), si testa con **Expo Go** direttamente sull'iPhone
+e si pubblica tramite **EAS Build**.
 
 ---
 
-## 1. Come testare localmente su iPhone
+## 1. Stack tecnologico
+
+| Tecnologia | Ruolo |
+|---|---|
+| **Expo SDK 52** | Framework e toolchain |
+| **React Native** | UI nativa |
+| **react-native-svg** | Robot Face e Owl Teacher (SVG) |
+| **React Navigation** | Navigazione tra schermate |
+| **Animated API** | Animazioni (native driver, UI thread) |
+| **expo-linear-gradient** | Sfondi sfumati |
+| **expo-haptics** | Feedback tattile sui tocchi |
+| **react-native-safe-area-context** | Safe area (notch, Dynamic Island) |
+
+---
+
+## 2. Come testare su iPhone
 
 ### Prerequisiti
+- **Expo Go** installato sull'iPhone (gratuito dall'App Store)
 - PC e iPhone sulla **stessa rete WiFi**
-- Node.js installato sul PC
-- L'IP locale del PC (es. `192.168.1.100`)
+- Node.js 18+ installato sul PC
 
-### Avvio del server di sviluppo
-
-Vite deve esporre il server sulla rete locale:
+### Avvio
 
 ```bash
-npm run dev:mobile
+cd mobile
+npm install
+npx expo start
 ```
 
-Lo script `dev:mobile` avvia Vite con `--host 0.0.0.0`, rendendo il
-server accessibile dalla rete locale.
+Apparirà un **QR code** nel terminale.
 
-### Accesso da iPhone
+### Apertura su iPhone
 
-1. Apri Safari sull'iPhone
-2. Vai all'indirizzo: `http://<IP-DEL-PC>:3000`
-   - es. `http://192.168.1.100:3000`
-3. L'app si carica come una pagina web normale
+1. Apri la **fotocamera** dell'iPhone
+2. Inquadra il **QR code**
+3. Tocca il banner "Apri in Expo Go"
+4. L'app si avvia istantaneamente
 
-### Per trovare il tuo IP locale
+> **Hot Reload**: ogni modifica al codice si riflette sull'iPhone in tempo reale.
+
+### Alternativa: tunnel (reti diverse)
 
 ```bash
-# macOS
-ipconfig getifaddr en0
-
-# Windows
-ipconfig | findstr "IPv4"
-
-# Linux
-hostname -I
+npx expo start --tunnel
 ```
 
-### Installazione sulla Home Screen (PWA)
-
-1. Apri l'app in Safari sull'iPhone
-2. Tocca il pulsante **Condividi** (icona rettangolo con freccia)
-3. Scorri e tocca **"Aggiungi alla schermata Home"**
-4. Conferma il nome e tocca **"Aggiungi"**
-5. L'app appare come un'icona sulla home screen
-6. Aprendola si avvia in **modalità standalone** (senza barra di Safari)
-
-> **Nota iOS 26+**: Ogni sito aggiunto alla home screen si apre
-> automaticamente come web app per default.
+Funziona anche se PC e iPhone sono su reti diverse (usa un tunnel ngrok).
 
 ---
 
-## 2. Configurazione PWA
-
-### Manifest (`manifest.webmanifest`)
-
-Il file manifest definisce come l'app appare quando installata:
-
-```json
-{
-  "name": "Robot React — Impara Giocando",
-  "short_name": "RoBot",
-  "description": "Assistente per l'apprendimento dei bambini",
-  "start_url": "/",
-  "scope": "/",
-  "display": "standalone",
-  "orientation": "portrait",
-  "theme_color": "#0a0a0f",
-  "background_color": "#0a0a0f",
-  "lang": "it",
-  "icons": [
-    {
-      "src": "/pwa-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "/pwa-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    },
-    {
-      "src": "/pwa-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    }
-  ]
-}
-```
-
-**Campi critici per iOS**:
-- `"scope": "/"` — obbligatorio, altrimenti i link escono dalla PWA
-- `"display": "standalone"` — iOS ignora `"fullscreen"` e `"minimal-ui"`
-- `"orientation": "portrait"` — blocca l'orientamento in verticale
-
-### Meta tag HTML per iOS
-
-Aggiungere in `index.html` dentro `<head>`:
-
-```html
-<!-- PWA manifest -->
-<link rel="manifest" href="/manifest.webmanifest">
-
-<!-- iOS: abilita modalità standalone -->
-<meta name="apple-mobile-web-app-capable" content="yes">
-
-<!-- iOS: nome dell'app sulla home screen -->
-<meta name="apple-mobile-web-app-title" content="RoBot">
-
-<!-- iOS: status bar trasparente (per il tema scuro della home) -->
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
-<!-- iOS: icona 180x180 per la home screen -->
-<link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png">
-
-<!-- Viewport con supporto safe area (notch/Dynamic Island) -->
-<meta name="viewport"
-  content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-```
-
-### Plugin Vite PWA
-
-Per generare automaticamente il service worker e il manifest:
-
-```bash
-npm install vite-plugin-pwa -D
-```
-
-Configurazione in `vite.config.js`:
-
-```js
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import { VitePWA } from 'vite-plugin-pwa';
-
-export default defineConfig({
-  plugins: [
-    react(),
-    VitePWA({
-      registerType: 'autoUpdate',
-      includeAssets: ['apple-touch-icon-180x180.png'],
-      manifest: {
-        name: 'Robot React — Impara Giocando',
-        short_name: 'RoBot',
-        description: 'Assistente per l apprendimento dei bambini',
-        start_url: '/',
-        scope: '/',
-        display: 'standalone',
-        orientation: 'portrait',
-        theme_color: '#0a0a0f',
-        background_color: '#0a0a0f',
-        lang: 'it',
-        icons: [
-          { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
-          { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
-          { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
-        ]
-      },
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp}']
-      }
-    })
-  ],
-  server: {
-    port: 3000,
-    host: '0.0.0.0',
-    open: true,
-  },
-  build: {
-    outDir: 'build',
-  },
-});
-```
-
----
-
-## 3. Safe Area — iPhone Notch e Dynamic Island
-
-L'iPhone ha zone "non sicure" dove il contenuto può essere coperto
-dal notch, dalla Dynamic Island o dalla barra Home.
-
-### CSS per le safe area
-
-```css
-/* Corpo dell'app: estendi fino ai bordi */
-.app {
-  min-height: 100dvh; /* dvh = dynamic viewport height (Safari) */
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
-  padding-left: env(safe-area-inset-left);
-  padding-right: env(safe-area-inset-right);
-}
-
-/* Pulsanti fissi in alto (es. back button) */
-.math-back-btn {
-  top: calc(24px + env(safe-area-inset-top));
-}
-
-/* Header dei giochi */
-.game-header {
-  padding-top: env(safe-area-inset-top);
-}
-```
-
-### Perché serve `viewport-fit=cover`
-
-Senza `viewport-fit=cover` nel meta viewport, tutte le variabili
-`env(safe-area-inset-*)` restituiscono `0`. Il contenuto non si
-estende fino ai bordi, lasciando barre nere ai lati.
-
----
-
-## 4. Ottimizzazioni Touch per Bambini
-
-### Principi chiave
-
-I bambini di 5 anni hanno motricità fine limitata. Le linee guida:
-
-| Parametro | Standard (adulti) | Bambini (5 anni) |
-|---|---|---|
-| Tap target minimo | 44x44 pt | **60x60 pt o più** |
-| Spaziatura tra elementi | 8px | **16-24px** |
-| Gesture supportate | Tap, swipe, pinch | **Solo tap** |
-| Feedback | Opzionale | **Obbligatorio su ogni tocco** |
-
-### CSS globale per iOS touch
-
-```css
-/* Disabilita selezione testo su elementi interattivi */
-button, .interactive {
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none;
-}
-
-/* Elimina il ritardo di 300ms sul tap */
-html {
-  touch-action: manipulation;
-}
-
-/* Rimuovi l'evidenziazione azzurra di iOS sul tap */
-* {
-  -webkit-tap-highlight-color: transparent;
-}
-
-/* Impedisci pull-to-refresh durante i giochi */
-body {
-  overscroll-behavior: none;
-}
-
-/* Impedisci lo zoom con doppio tap */
-html {
-  touch-action: manipulation;
-}
-```
-
-### Dimensioni minime per Robot React
-
-Tutte le aree toccabili nell'app devono rispettare queste dimensioni:
-
-| Elemento | Desktop attuale | Mobile target |
-|---|---|---|
-| Giocattoli (counting) | 90x90px | **100x100px** |
-| Palloni (balloon) | 84x84px | **96x96px** |
-| Bambole (sequence) | 96x110px | **104x120px** |
-| Pupazzi (compare) | 3.2rem | **3.6rem** |
-| Bottoni risposta | 90x90px | **100x100px** |
-| Carte attività | 180px min-h | **200px min-h** |
-| Bottoni età | 64x64px | **72x72px** |
-| Input nome | 320px max-w | **100% width** |
-| Back button | 48x48px | **52x52px** |
-
----
-
-## 5. Layout Mobile
-
-### Differenze chiave rispetto al desktop
-
-| Aspetto | Desktop | Mobile iPhone |
-|---|---|---|
-| Viewport | Landscape/grande | **Portrait 375-430px** |
-| Particle field | Canvas pieno | **Ridotto o disabilitato** (risparmio batteria) |
-| Orbital menu | 380-600px scene | **320px scene max** |
-| Font size | clamp() standard | **Soglie più alte** |
-| Animazioni | Tutte attive | **Ridurre `will-change`** |
-
-### Breakpoint CSS consigliati
-
-```css
-/* iPhone SE (375px) */
-@media (max-width: 375px) { }
-
-/* iPhone 12/13/14 standard (390px) */
-@media (max-width: 390px) { }
-
-/* iPhone 14 Pro Max / 15 Plus (430px) */
-@media (max-width: 430px) { }
-
-/* Generico mobile */
-@media (max-width: 480px) { }
-```
-
-### Performance su mobile
-
-Per evitare lag su iPhone:
-
-1. **Ridurre le particelle**: da 100 a 40-50 sul canvas
-2. **Disabilitare backdrop-filter** sui dispositivi lenti:
-   ```css
-   @media (max-width: 480px) {
-     .orbit-item-inner {
-       backdrop-filter: none;
-       background: rgba(10, 10, 30, 0.6);
-     }
-   }
-   ```
-3. **Usare `will-change` con parsimonia**: solo sugli elementi animati attivamente
-4. **CSS animations > framer-motion infinite**: già fatto con `@keyframes playBounce`
-5. **Usare `100dvh`** invece di `100vh` (Safari mobile ha la barra che cambia altezza)
-
----
-
-## 6. Icone e Splash Screen
-
-### Icone necessarie
-
-| File | Dimensione | Uso |
-|---|---|---|
-| `apple-touch-icon-180x180.png` | 180x180 | Icona home screen iPhone |
-| `pwa-192x192.png` | 192x192 | Icona PWA standard |
-| `pwa-512x512.png` | 512x512 | Icona PWA grande + maskable |
-| `favicon.ico` | 32x32 | Tab del browser |
-
-**Nota**: L'icona 180x180 deve essere un PNG quadrato **senza angoli arrotondati**.
-iOS applica automaticamente la maschera con gli angoli arrotondati.
-
-### Splash Screen iOS
-
-iOS richiede immagini di splash screen statiche per ogni dimensione
-di dispositivo. Senza, l'utente vede uno schermo bianco all'avvio.
-
-Generare con tool come:
-- [Progressier PWA Generator](https://progressier.com/pwa-icons-and-ios-splash-screen-generator)
-- [pwa-asset-generator](https://github.com/nicedoc/pwa-asset-generator)
-
-```html
-<!-- Esempio per iPhone 15 Pro -->
-<link rel="apple-touch-startup-image"
-  media="screen and (device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)"
-  href="/splash-1179x2556.png">
-```
-
----
-
-## 7. Limitazioni iOS da considerare
-
-| Funzionalità | Supporto iOS |
-|---|---|
-| Cache API | Si (limite 50 MB) |
-| Push notifications | Si (iOS 16.4+, solo da home screen) |
-| Background Sync | No |
-| Storage persistente | 7 giorni se non installata |
-| Condivisione dati Safari ↔ PWA | No (storage isolato) |
-| `display: fullscreen` | No (fallback a standalone) |
-| OAuth redirect in standalone | Problematico |
-
-### Conseguenze pratiche per Robot React
-
-1. **Salvare i progressi**: Usare `localStorage` per nome/età del bambino.
-   I dati persistono nella PWA installata, ma NON sono condivisi con Safari.
-2. **Non superare 50 MB di cache**: Le nostre emoji SVG e JS sono leggere (~300 KB).
-3. **Nessun audio di background**: Pianificare feedback visivo, non audio
-   (almeno per la v1).
-
----
-
-## 8. Struttura file per la versione mobile
+## 3. Struttura del progetto
 
 ```
-RobotReact/
-├── public/
-│   ├── apple-touch-icon-180x180.png    ← icona home screen
-│   ├── pwa-192x192.png                 ← icona PWA
-│   ├── pwa-512x512.png                 ← icona PWA grande
-│   ├── favicon.ico                     ← favicon browser
-│   └── splash-*.png                    ← splash screen (opzionale)
-├── index.html                          ← + meta tag iOS + manifest link
-├── vite.config.js                      ← + VitePWA plugin + host 0.0.0.0
-├── package.json                        ← + script dev:mobile + vite-plugin-pwa
+mobile/
+├── App.js                          ← entry point
+├── app.json                        ← configurazione Expo
+├── package.json                    ← dipendenze
+├── babel.config.js                 ← config Babel
+├── assets/
+│   ├── icon.png                    ← icona app (1024x1024)
+│   ├── splash.png                  ← splash screen
+│   └── adaptive-icon.png           ← icona Android (opzionale)
 └── src/
-    ├── App.css                         ← + safe area + touch CSS + breakpoint
-    ├── App.jsx                         ← + rilevamento standalone mode
-    └── components/
-        └── (tutti i componenti esistenti, ottimizzati per touch)
+    ├── navigation/
+    │   └── AppNavigator.js         ← stack navigator
+    ├── screens/
+    │   ├── HomeScreen.js           ← homepage con Robot
+    │   └── MathScreen.js           ← container matematica
+    ├── components/
+    │   ├── RobotFace.js            ← SVG faccia robot
+    │   ├── OrbitalMenu.js          ← menu circolare materie
+    │   ├── ParticleField.js        ← particelle decorative
+    │   ├── TypewriterText.js       ← testo typewriter
+    │   ├── OwlTeacher.js           ← SVG gufo maestro
+    │   ├── MathOnboarding.js       ← onboarding nome + età
+    │   ├── MathActivities.js       ← selezione 4 attività
+    │   ├── GameComplete.js         ← schermata stelle fine gioco
+    │   ├── CountingGame.js         ← conta i giocattoli
+    │   ├── BalloonGame.js          ← prendi i palloni
+    │   ├── SequenceGame.js         ← metti in fila
+    │   └── CompareGame.js          ← chi ha di più?
+    └── theme/
+        └── colors.js               ← palette colori condivisa
 ```
 
 ---
 
-## 9. Checklist implementazione
+## 4. Differenze chiave Web → React Native
 
-### Fase 1 — Setup PWA base
-- [ ] Installare `vite-plugin-pwa`
-- [ ] Creare `manifest.webmanifest` (via plugin)
-- [ ] Aggiungere meta tag iOS in `index.html`
-- [ ] Aggiungere `viewport-fit=cover` al meta viewport
-- [ ] Creare icone (180, 192, 512)
-- [ ] Aggiungere script `dev:mobile` a package.json
-- [ ] Testare accesso da iPhone via WiFi
-
-### Fase 2 — CSS mobile
-- [ ] Aggiungere CSS touch globale (tap highlight, user-select, overscroll)
-- [ ] Supporto safe area (notch, home indicator)
-- [ ] Breakpoint per iPhone (375px, 390px, 430px)
-- [ ] Usare `100dvh` al posto di `100vh`
-- [ ] Ingrandire tap target per bambini
-
-### Fase 3 — Performance
-- [ ] Ridurre particelle canvas su mobile
-- [ ] Rimuovere `backdrop-filter` su mobile
-- [ ] Verificare fps su iPhone reale (60fps target)
-- [ ] Ottimizzare caricamento font (preload)
-
-### Fase 4 — UX mobile
-- [ ] Impedire zoom accidentale
-- [ ] Impedire scroll elastico durante i giochi
-- [ ] Testare ogni gioco su iPhone
-- [ ] Verificare che le carte attività siano scrollabili se necessario
-- [ ] Gestire orientamento landscape (bloccare o adattare)
-
-### Fase 5 — Distribuzione
-- [ ] Build di produzione (`npm run build`)
-- [ ] Testare con `npm run preview` su rete locale
-- [ ] Verificare installazione su home screen
-- [ ] Verificare modalità standalone
-- [ ] Verificare persistenza dati (localStorage)
+| Web (React) | React Native |
+|---|---|
+| `<div>` | `<View>` |
+| `<p>`, `<span>` | `<Text>` |
+| `<button>` | `<Pressable>` o `<TouchableOpacity>` |
+| `<input>` | `<TextInput>` |
+| CSS / className | `StyleSheet.create({})` |
+| `framer-motion` | `Animated` API (native driver) |
+| HTML Canvas | Animated `<View>` (particelle semplificate) |
+| SVG (HTML) | `react-native-svg` |
+| CSS `@keyframes` | `Animated.loop()` |
+| `linear-gradient` CSS | `<LinearGradient>` componente |
+| `position: fixed` | `position: 'absolute'` + dimensioni schermo |
+| `vh` / `vw` | `Dimensions.get('window')` |
+| `:hover` | Non esiste (solo touch) |
+| `cursor: pointer` | Non necessario |
 
 ---
 
-## 10. Comandi utili
+## 5. Strategia animazioni
+
+### Sostituzioni
+
+| Web (framer-motion) | React Native |
+|---|---|
+| `initial + animate` | `Animated.timing()` in `useEffect` |
+| `whileTap={{ scale: 0.95 }}` | `Pressable` + `Animated.spring()` |
+| `AnimatePresence` | Fade in/out manuale con `Animated.timing` |
+| `transition: { type: 'spring' }` | `Animated.spring({ useNativeDriver: true })` |
+| `repeat: Infinity` | `Animated.loop()` |
+| CSS `@keyframes playBounce` | `Animated.loop(Animated.sequence([...]))` |
+
+### Regola d'oro
+Usare sempre `useNativeDriver: true` per animazioni su `transform` e `opacity`.
+Questo sposta l'animazione dal thread JS al thread UI nativo → 60fps garantiti.
+
+---
+
+## 6. Pubblicazione su App Store
+
+### Requisiti
+1. **Apple Developer Account** — $99/anno
+2. **Mac con Xcode** — per la build finale (oppure EAS Build cloud)
+3. **App Store Connect** — per sottomettere l'app
+
+### Con EAS Build (senza Mac)
 
 ```bash
-# Avvio sviluppo su rete locale (iPhone)
-npm run dev:mobile
-
-# Build di produzione
-npm run build
-
-# Preview build su rete locale
-npm run preview -- --host 0.0.0.0
-
-# Trovare IP locale (macOS)
-ipconfig getifaddr en0
-
-# Debug Safari iOS da macOS
-# 1. iPhone: Impostazioni > Safari > Avanzate > Web Inspector ON
-# 2. Mac: Safari > Sviluppo > [nome iPhone] > [pagina web]
+npm install -g eas-cli
+eas login
+eas build --platform ios
+eas submit --platform ios
 ```
+
+EAS Build compila nel cloud — non serve un Mac per lo sviluppo.
+
+### Con Xcode (build locale)
+
+```bash
+npx expo prebuild --platform ios
+cd ios && pod install
+# Apri in Xcode:
+open ios/RobotReact.xcworkspace
+# Product → Archive → Distribute to App Store
+```
+
+### Icone richieste
+
+| Dimensione | Uso |
+|---|---|
+| 1024x1024 | App Store |
+| 180x180 | iPhone home screen |
+| 120x120 | iPhone Spotlight |
+| 87x87 | iPhone Settings |
+| 60x60 | Notification |
+
+Expo genera automaticamente tutte le dimensioni da `icon.png` (1024x1024).
+
+### App per bambini — regole App Store
+
+- **Kids Category**: richiede conformità COPPA
+- **Nessuna pubblicità** nella versione Kids
+- **Nessun link esterno** senza parental gate
+- **Nessuna raccolta dati** dei minori
+- **Privacy Policy** obbligatoria
+- **Age Rating**: 4+ (dato che il nostro contenuto è educativo)
+
+---
+
+## 7. Comandi utili
+
+```bash
+# Installare dipendenze
+cd mobile && npm install
+
+# Avviare con Expo Go (QR code)
+npx expo start
+
+# Avviare con tunnel (reti diverse)
+npx expo start --tunnel
+
+# Build iOS per App Store (cloud)
+eas build --platform ios
+
+# Submit all'App Store
+eas submit --platform ios
+
+# Generare progetto nativo (per Xcode)
+npx expo prebuild --platform ios
+
+# Pulire cache
+npx expo start --clear
+```
+
+---
+
+## 8. Checklist implementazione
+
+### Fase 1 — Setup progetto ✅
+- [x] Inizializzare progetto Expo
+- [x] Installare dipendenze (svg, navigation, gradient, haptics)
+- [x] Configurare navigazione (Home → Math)
+- [x] Definire tema colori
+
+### Fase 2 — Homepage ✅
+- [x] RobotFace (SVG nativo)
+- [x] ParticleField (particelle animate)
+- [x] OrbitalMenu (menu circolare materie)
+- [x] TypewriterText (effetto macchina da scrivere)
+
+### Fase 3 — Matematica ✅
+- [x] OwlTeacher (SVG gufo)
+- [x] MathOnboarding (nome + età)
+- [x] MathActivities (selezione 4 giochi)
+- [x] GameComplete (stelle di valutazione)
+
+### Fase 4 — Giochi ✅
+- [x] CountingGame (conta i giocattoli)
+- [x] BalloonGame (prendi i palloni)
+- [x] SequenceGame (metti in fila)
+- [x] CompareGame (chi ha di più?)
+
+### Fase 5 — Polish e pubblicazione
+- [ ] Testare su iPhone fisico via Expo Go
+- [ ] Creare icona app 1024x1024
+- [ ] Creare splash screen
+- [ ] Configurare EAS Build
+- [ ] Creare Apple Developer Account
+- [ ] Build e submit all'App Store
+- [ ] Scrivere Privacy Policy
