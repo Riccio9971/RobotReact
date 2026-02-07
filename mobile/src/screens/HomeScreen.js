@@ -93,7 +93,7 @@ const HomeScreen = ({ navigation }) => {
               style={{
                 opacity: robotAnim,
                 transform: [
-                  { scale: robotAnim.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1] }) },
+                  { scale: robotAnim.interpolate({ inputRange: [0, 1], outputRange: [0.5, 0.7] }) },
                   { translateY: robotAnim.interpolate({ inputRange: [0, 1], outputRange: [60, 0] }) },
                 ],
               }}
@@ -133,11 +133,11 @@ const styles = StyleSheet.create({
   },
   orbitalLayer: {
     ...StyleSheet.absoluteFillObject,
-    zIndex: 2,
+    zIndex: 1,
   },
   centerColumn: {
     ...StyleSheet.absoluteFillObject,
-    zIndex: 1,
+    zIndex: 0,
     alignItems: 'center',
     justifyContent: 'center',
     pointerEvents: 'none',
