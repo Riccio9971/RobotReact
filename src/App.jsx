@@ -8,11 +8,6 @@ import './App.css';
 
 function App() {
   const [phase, setPhase] = useState(0);
-  // phase 0: darkness
-  // phase 1: particles appear
-  // phase 2: robot appears
-  // phase 3: text types
-  // phase 4: orbital menu appears
 
   useEffect(() => {
     const timers = [
@@ -67,57 +62,57 @@ function App() {
         ))}
       </div>
 
-      {/* Main content */}
-      <div className="content-wrapper">
-        {/* Robot Face */}
-        <AnimatePresence>
-          {phase >= 2 && (
-            <motion.div
-              className="robot-container"
-              initial={{ opacity: 0, y: 60, scale: 0.8 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{
-                type: 'spring',
-                stiffness: 100,
-                damping: 15,
-                duration: 1.2,
-              }}
-            >
-              <RobotFace />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Welcome text */}
-        <AnimatePresence>
-          {phase >= 3 && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5 }}
-            >
-              <TypewriterText />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Orbital Menu */}
+      {/* Main scene: robot at center, orbits around it */}
+      <div className="scene">
+        {/* Orbital Menu (behind robot) */}
         <AnimatePresence>
           {phase >= 4 && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.5 }}
+              className="orbital-layer"
+              initial={{ opacity: 0, scale: 0.3 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{
                 type: 'spring',
-                stiffness: 80,
-                damping: 20,
-                duration: 1.5,
+                stiffness: 60,
+                damping: 18,
               }}
             >
               <OrbitalMenu />
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Robot + text (always centered, above orbits) */}
+        <div className="center-column">
+          <AnimatePresence>
+            {phase >= 2 && (
+              <motion.div
+                className="robot-container"
+                initial={{ opacity: 0, y: 60, scale: 0.8 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{
+                  type: 'spring',
+                  stiffness: 100,
+                  damping: 15,
+                }}
+              >
+                <RobotFace />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <AnimatePresence>
+            {phase >= 3 && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5 }}
+              >
+                <TypewriterText />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
       {/* Overlay effects */}

@@ -4,7 +4,6 @@
   height: 100vh;
   background: radial-gradient(ellipse at 50% 50%, #0d0d1a 0%, #0a0a0f 60%, #050508 100%);
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
   position: relative;
@@ -15,12 +14,12 @@
 .app::before {
   content: '';
   position: absolute;
-  top: 30%;
+  top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   width: 600px;
   height: 600px;
-  background: radial-gradient(circle, rgba(0, 240, 255, 0.03) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(0, 240, 255, 0.04) 0%, transparent 70%);
   pointer-events: none;
   z-index: 1;
 }
@@ -35,15 +34,35 @@
   background: linear-gradient(90deg, transparent, rgba(0, 240, 255, 0.1), transparent);
 }
 
-/* ===== CONTENT WRAPPER ===== */
-.content-wrapper {
+/* ===== SCENE: stacking context for robot + orbits ===== */
+.scene {
+  position: relative;
+  width: clamp(380px, 80vmin, 600px);
+  height: clamp(380px, 80vmin, 600px);
+  z-index: 10;
+}
+
+/* Orbital layer: fills the scene, sits behind the robot */
+.orbital-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+/* Center column: robot + text, always on top at dead center */
+.center-column {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  position: relative;
-  z-index: 10;
-  gap: 10px;
+  pointer-events: none;
+}
+
+.center-column > * {
+  pointer-events: auto;
 }
 
 /* ===== ROBOT CONTAINER ===== */
@@ -57,18 +76,17 @@
 /* ===== TYPEWRITER TEXT ===== */
 .typewriter-container {
   text-align: center;
-  min-height: 80px;
+  min-height: 60px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  margin-top: 5px;
-  margin-bottom: 10px;
+  margin-top: 8px;
 }
 
 .typewriter-title {
   font-family: 'Orbitron', sans-serif;
-  font-size: clamp(1.2rem, 3vw, 2rem);
+  font-size: clamp(1rem, 2.5vw, 1.6rem);
   font-weight: 700;
   background: linear-gradient(135deg, #00f0ff 0%, #7b2fff 50%, #ff2d7b 100%);
   -webkit-background-clip: text;
@@ -80,11 +98,11 @@
 
 .typewriter-subtitle {
   font-family: 'Rajdhani', sans-serif;
-  font-size: clamp(0.9rem, 2vw, 1.2rem);
+  font-size: clamp(0.8rem, 1.8vw, 1.1rem);
   color: rgba(224, 224, 255, 0.5);
   font-weight: 300;
   letter-spacing: 4px;
-  margin-top: 8px;
+  margin-top: 6px;
 }
 
 .cursor {
@@ -106,16 +124,16 @@
 /* ===== ORBITAL MENU ===== */
 .orbital-wrapper {
   position: relative;
-  width: clamp(320px, 70vmin, 520px);
-  height: clamp(320px, 70vmin, 520px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 100%;
+  height: 100%;
 }
 
 /* Orbital rings */
 .orbital-ring {
   position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   width: 100%;
   height: 100%;
   border-radius: 50%;
@@ -139,17 +157,15 @@
 }
 
 @keyframes ringRotate {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
 /* Orbit path for items */
 .orbit-path {
   position: absolute;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   animation: orbitSpin 25s linear infinite;
-  transform-style: preserve-3d;
 }
 
 @keyframes orbitSpin {
@@ -164,7 +180,6 @@
   height: 80px;
   transform: translate(-50%, -50%);
   cursor: pointer;
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .orbit-item-inner {
@@ -216,7 +231,7 @@
     0 0 20px rgba(0, 240, 255, 0.15),
     0 0 40px rgba(0, 240, 255, 0.05),
     inset 0 0 20px rgba(0, 240, 255, 0.05);
-  transform: scale(1.15);
+  transform: translate(-50%, -50%) scale(1.15);
 }
 
 .orbit-item:hover {
@@ -358,25 +373,17 @@
 }
 
 /* ===== RESPONSIVE ===== */
-@media (max-height: 700px) {
-  .typewriter-container {
-    min-height: 50px;
-    margin-top: 0;
-    margin-bottom: 5px;
-  }
-
-  .orbital-wrapper {
-    width: clamp(260px, 50vmin, 400px);
-    height: clamp(260px, 50vmin, 400px);
+@media (max-height: 600px) {
+  .scene {
+    width: clamp(300px, 70vmin, 450px);
+    height: clamp(300px, 70vmin, 450px);
   }
 }
 
 @media (max-width: 480px) {
   .orbit-item {
-    width: 64px;
-    height: 64px;
-    margin-left: -32px;
-    margin-top: -32px;
+    width: 60px;
+    height: 60px;
   }
 
   .orbit-item-icon {
@@ -386,5 +393,9 @@
 
   .orbit-item-label {
     font-size: 6px;
+  }
+
+  .orbit-item:hover .orbit-item-inner {
+    transform: translate(-50%, -50%) scale(1.1);
   }
 }
