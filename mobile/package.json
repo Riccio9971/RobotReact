@@ -6,8 +6,7 @@
     "start": "expo start",
     "ios": "expo start --ios",
     "tunnel": "expo start --tunnel",
-    "clear": "expo start --clear",
-    "postinstall": "patch-package"
+    "clear": "expo start --clear"
   },
   "dependencies": {
     "@react-navigation/native": "^7.1.28",
@@ -24,8 +23,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.25.0",
-    "babel-preset-expo": "~54.0.10",
-    "patch-package": "^8.0.1"
+    "babel-preset-expo": "~54.0.10"
   },
   "overrides": {
     "tar": "^7.5.7"
