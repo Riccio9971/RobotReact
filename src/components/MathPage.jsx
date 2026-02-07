@@ -1,12 +1,18 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import MathOnboarding from './MathOnboarding';
+import MathActivities from './MathActivities';
+import CountingGame from './CountingGame';
+import BalloonGame from './BalloonGame';
+import SequenceGame from './SequenceGame';
+import CompareGame from './CompareGame';
 
 const floatingNumbers = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '+', '-', '×', '÷', '='];
 const colors = ['#ff6b35', '#ff2d7b', '#7b2fff', '#00f0ff', '#00ff88', '#ffaa00', '#ff4757', '#2ed573'];
 
 const MathPage = ({ onBack }) => {
   const [student, setStudent] = useState(null); // null = onboarding
+  const [activity, setActivity] = useState(null); // null = activity selection
 
   const numbers = useMemo(() => {
     return Array.from({ length: 25 }, (_, i) => ({
@@ -24,6 +30,26 @@ const MathPage = ({ onBack }) => {
 
   const handleOnboardingComplete = (data) => {
     setStudent(data);
+  };
+
+  const handleSelectActivity = (actId) => {
+    setActivity(actId);
+  };
+
+  const handleBackToActivities = () => {
+    setActivity(null);
+  };
+
+  // Render the active game
+  const renderGame = () => {
+    const gameProps = { student, onBack: handleBackToActivities };
+    switch (activity) {
+      case 'counting': return <CountingGame key="counting" {...gameProps} />;
+      case 'balloons': return <BalloonGame key="balloons" {...gameProps} />;
+      case 'sequence': return <SequenceGame key="sequence" {...gameProps} />;
+      case 'compare': return <CompareGame key="compare" {...gameProps} />;
+      default: return null;
+    }
   };
 
   return (
@@ -64,88 +90,32 @@ const MathPage = ({ onBack }) => {
         ))}
       </div>
 
-      {/* Back button */}
-      <motion.button
-        className="math-back-btn"
-        onClick={onBack}
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.95 }}
-        initial={{ opacity: 0, x: -30 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.3 }}
-      >
-        ← Torna a Robot
-      </motion.button>
+      {/* Back button — only on activity selection, not during games */}
+      {!activity && (
+        <motion.button
+          className="math-back-btn"
+          onClick={onBack}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+          initial={{ opacity: 0, x: -30 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          ← Torna a Robot
+        </motion.button>
+      )}
 
       <AnimatePresence mode="wait">
         {!student ? (
-          /* ===== ONBOARDING ===== */
           <MathOnboarding key="onboarding" onComplete={handleOnboardingComplete} />
+        ) : activity ? (
+          renderGame()
         ) : (
-          /* ===== MATH CONTENT ===== */
-          <motion.div
-            key="content"
-            className="math-content"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <motion.div
-              className="math-hero-emoji"
-              initial={{ scale: 0, rotate: -180 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ type: 'spring', stiffness: 150, damping: 12, delay: 0.2 }}
-            >
-              🔢
-            </motion.div>
-
-            <motion.h1
-              className="math-title"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              Ciao {student.name}!
-            </motion.h1>
-
-            <motion.p
-              className="math-subtitle"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
-            >
-              {student.difficulty} — Impariamo i numeri giocando!
-            </motion.p>
-
-            {/* Number grid */}
-            <motion.div
-              className="math-number-grid"
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6 }}
-            >
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((num, i) => (
-                <motion.button
-                  key={num}
-                  className="math-number-btn"
-                  style={{ '--btn-color': colors[i % colors.length] }}
-                  whileHover={{ scale: 1.15, rotate: [0, -5, 5, 0] }}
-                  whileTap={{ scale: 0.9 }}
-                  initial={{ opacity: 0, scale: 0 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{
-                    delay: 0.7 + i * 0.08,
-                    type: 'spring',
-                    stiffness: 250,
-                    damping: 15,
-                  }}
-                >
-                  {num}
-                </motion.button>
-              ))}
-            </motion.div>
-          </motion.div>
+          <MathActivities
+            key="activities"
+            student={student}
+            onSelectActivity={handleSelectActivity}
+          />
         )}
       </AnimatePresence>
     </motion.div>

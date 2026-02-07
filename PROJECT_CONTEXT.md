@@ -25,18 +25,21 @@ Il robot accoglie i bambini nella home page e li guida verso diverse materie.
 5. Si apre la **schermata Matematica** colorata
 6. **Onboarding** (se primo accesso): il Prof. Gufo chiede nome e poi età
 7. In base all'età si imposta la difficoltà
-8. Si accede ai giochi matematici
+8. **Selezione attività**: 4 mini-giochi visuali tra cui scegliere
+9. Si gioca al mini-gioco scelto (5 round, poi stelle di valutazione)
 
 ## Fasce di difficoltà Matematica
 
-### Piccoli Esploratori (3-4 anni)
-- Contare da 1 a 5 (poi fino a 10)
-- Riconoscere numeri scritti
-- Confronto: di più / di meno / uguale
-- Riconoscere forme base (cerchio, quadrato, triangolo)
-- Raggruppare oggetti per colore/forma/dimensione
+**Età minima**: 5 anni (un bambino di 3-4 anni non è ancora pronto per la matematica)
 
-### Giovani Matematici (5-6 anni)
+### Piccoli Esploratori (5 anni)
+- Conoscere i numeri da 1 a 10
+- Contare oggetti
+- Riconoscere i numeri scritti
+- Confrontare: di più / di meno
+- Ordinare numeri in sequenza
+
+### Giovani Matematici (6 anni)
 - Contare da 1 a 20
 - Scrivere numeri
 - Addizioni e sottrazioni entro il 10
@@ -52,6 +55,31 @@ Il robot accoglie i bambini nella home page e li guida verso diverse materie.
 - Frazioni semplici (metà, un quarto)
 - Misure e confronti (lungo, corto, pesante, leggero)
 
+## Attività Matematica (5 anni — Piccoli Esploratori)
+
+Poiché il bambino di 5 anni non sa ancora leggere, tutte le attività
+sono visive, con emoji grandi e interazione tramite tocco.
+
+### 1. 🧸 Conta i Giocattoli — Contare
+- Mostra N giocattoli sullo schermo
+- Il bambino li conta e sceglie il numero giusto
+- Difficoltà progressiva: da 2-4 fino a 5-8 oggetti
+
+### 2. ⚽ Quanti Palloni? — Riconoscimento numeri → quantità
+- Mostra un numero target (es. "4")
+- Il bambino deve toccare esattamente quel numero di palloni
+- Insegna l'associazione numero-quantità
+
+### 3. 🎎 Bambole in Fila — Sequenze numeriche
+- Mostra bambole numerate in ordine casuale
+- Il bambino le tocca nell'ordine giusto (1, 2, 3...)
+- Insegna l'ordinamento dei numeri
+
+### 4. 🐻 Chi ha di più? — Confronto quantità
+- Mostra due gruppi di pupazzi/animali
+- "Chi ha di più?" — il bambino tocca il gruppo più numeroso
+- Insegna il concetto di confronto (di più / di meno)
+
 ## Design Principles
 - Colorato e divertente per bambini
 - Animazioni giocose e coinvolgenti
@@ -59,3 +87,4 @@ Il robot accoglie i bambini nella home page e li guida verso diverse materie.
 - Apprendimento tramite gioco
 - Ogni materia ha un maestro-personaggio dedicato
 - Domande una alla volta, mai sovraccaricare il bambino
+- Nessuna lettura richiesta per i più piccoli (tutto visivo)
