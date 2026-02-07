@@ -1,0 +1,44 @@
+diff --git a/node_modules/react-native-screens/lib/commonjs/utils.js b/node_modules/react-native-screens/lib/commonjs/utils.js
+index 713c71f..a14e1d7 100644
+--- a/node_modules/react-native-screens/lib/commonjs/utils.js
++++ b/node_modules/react-native-screens/lib/commonjs/utils.js
+@@ -15,13 +15,9 @@ function executeNativeBackPress() {
+   return true;
+ }
+ function parseBooleanToOptionalBooleanNativeProp(prop) {
+-  switch (prop) {
+-    case undefined:
+-      return 'undefined';
+-    case true:
+-      return 'true';
+-    case false:
+-      return 'false';
++  if (prop === undefined) {
++    return undefined;
+   }
++  return !!prop;
+ }
+ //# sourceMappingURL=utils.js.map
+\ No newline at end of file
+diff --git a/node_modules/react-native-screens/lib/module/utils.js b/node_modules/react-native-screens/lib/module/utils.js
+index 9f4bb00..9dda5ff 100644
+--- a/node_modules/react-native-screens/lib/module/utils.js
++++ b/node_modules/react-native-screens/lib/module/utils.js
+@@ -7,13 +7,9 @@ export function executeNativeBackPress() {
+   return true;
+ }
+ export function parseBooleanToOptionalBooleanNativeProp(prop) {
+-  switch (prop) {
+-    case undefined:
+-      return 'undefined';
+-    case true:
+-      return 'true';
+-    case false:
+-      return 'false';
++  if (prop === undefined) {
++    return undefined;
+   }
++  return !!prop;
+ }
+ //# sourceMappingURL=utils.js.map
+\ No newline at end of file
