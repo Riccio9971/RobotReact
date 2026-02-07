@@ -3,7 +3,7 @@ import { View, Text, Pressable, Animated, StyleSheet, Dimensions } from 'react-n
 import * as Haptics from 'expo-haptics';
 import OwlTeacher from './OwlTeacher';
 import GameComplete from './GameComplete';
-import { GameHeader, FeedbackOverlay } from './CountingGame';
+import { GameHeader, ConfettiOverlay } from './CountingGame';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const animalEmojis = ['🐻', '🐰', '🦁', '🐸', '🐱', '🐶', '🐼', '🦊'];
@@ -43,13 +43,22 @@ function generateRound(roundNum) {
 
 const BounceAnimal = ({ emoji, delay }) => {
   const anim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      delay: delay * 100,
+      useNativeDriver: true,
+      tension: 250,
+      friction: 12,
+    }).start();
+
     const timeout = setTimeout(() => {
       Animated.loop(
         Animated.sequence([
-          Animated.timing(anim, { toValue: -8, duration: 1100, useNativeDriver: true }),
-          Animated.timing(anim, { toValue: 0, duration: 1100, useNativeDriver: true }),
+          Animated.timing(anim, { toValue: -8, duration: 900 + Math.random() * 400, useNativeDriver: true }),
+          Animated.timing(anim, { toValue: 0, duration: 900 + Math.random() * 400, useNativeDriver: true }),
         ])
       ).start();
     }, delay * 150);
@@ -57,7 +66,7 @@ const BounceAnimal = ({ emoji, delay }) => {
   }, []);
 
   return (
-    <Animated.Text style={[styles.puppet, { transform: [{ translateY: anim }] }]}>
+    <Animated.Text style={[styles.puppet, { transform: [{ translateY: anim }, { scale: scaleAnim }] }]}>
       {emoji}
     </Animated.Text>
   );
@@ -67,6 +76,7 @@ const GroupButton = ({ group, side, isWinner, isWrong, onPress, fromLeft }) => {
   const slideAnim = useRef(new Animated.Value(fromLeft ? -40 : 40)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
+  const pressAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     Animated.parallel([
@@ -95,6 +105,14 @@ const GroupButton = ({ group, side, isWinner, isWrong, onPress, fromLeft }) => {
     }
   }, [isWrong]);
 
+  const handlePressIn = () => {
+    Animated.spring(pressAnim, { toValue: 0.95, useNativeDriver: true, tension: 300, friction: 10 }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(pressAnim, { toValue: 1, useNativeDriver: true, tension: 200, friction: 15 }).start();
+  };
+
   return (
     <Animated.View
       style={{
@@ -102,6 +120,7 @@ const GroupButton = ({ group, side, isWinner, isWrong, onPress, fromLeft }) => {
         opacity: opacityAnim,
         transform: [
           { translateX: Animated.add(slideAnim, shakeAnim) },
+          { scale: pressAnim },
         ],
       }}
     >
@@ -112,6 +131,8 @@ const GroupButton = ({ group, side, isWinner, isWrong, onPress, fromLeft }) => {
           isWinner && styles.groupWinner,
         ]}
         onPress={() => onPress(side)}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
       >
         <View style={styles.groupItems}>
           {group.items.map((emoji, i) => (
@@ -158,7 +179,6 @@ const CompareGame = ({ student, onBack }) => {
     <View style={styles.container}>
       <GameHeader round={round} score={score} onBack={onBack} />
 
-      {/* Owl + speech */}
       <View style={styles.owlSection}>
         <View style={styles.speechBubble}>
           <Text style={styles.speechText}>
@@ -171,7 +191,6 @@ const CompareGame = ({ student, onBack }) => {
         </View>
       </View>
 
-      {/* Two groups */}
       <View style={styles.groupsRow} key={round}>
         <GroupButton
           group={roundData.groupA}
@@ -196,7 +215,7 @@ const CompareGame = ({ student, onBack }) => {
         />
       </View>
 
-      {feedback && <FeedbackOverlay type={feedback} />}
+      {feedback && <ConfettiOverlay type={feedback} />}
     </View>
   );
 };
@@ -248,7 +267,6 @@ const styles = StyleSheet.create({
   owlMini: {
     width: 65,
   },
-  // Groups
   groupsRow: {
     flex: 1,
     flexDirection: 'row',
@@ -258,13 +276,13 @@ const styles = StyleSheet.create({
   },
   group: {
     flex: 1,
-    minHeight: 220,
+    minHeight: 200,
     borderWidth: 4,
     borderRadius: 28,
     backgroundColor: 'rgba(255, 255, 255, 0.6)',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
+    padding: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.1,
@@ -279,24 +297,32 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    gap: 8,
+    gap: 12,
   },
   puppet: {
-    fontSize: 34,
+    fontSize: 32,
   },
   vsContainer: {
     position: 'absolute',
     left: '50%',
-    marginLeft: -20,
+    marginLeft: -22,
     zIndex: 10,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 4,
   },
   vsText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '800',
     color: '#ff2d7b',
-    textShadowColor: 'rgba(255, 45, 123, 0.3)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 8,
   },
 });
 

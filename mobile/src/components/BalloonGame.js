@@ -1,12 +1,14 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { View, Text, Pressable, Animated, StyleSheet } from 'react-native';
+import { View, Text, Pressable, Animated, StyleSheet, Dimensions } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import OwlTeacher from './OwlTeacher';
 import GameComplete from './GameComplete';
-import { GameHeader, FeedbackOverlay } from './CountingGame';
+import { GameHeader, ConfettiOverlay } from './CountingGame';
 
+const { width: SCREEN_W } = Dimensions.get('window');
 const ballEmojis = ['⚽', '🏀', '🔴', '🟡', '🟢', '🔵', '🟣', '🟠', '⚾', '🎾'];
 const TOTAL_ROUNDS = 5;
+const BALL_SIZE = 72;
 
 function generateRound(roundNum) {
   let min, max;
@@ -21,40 +23,61 @@ function generateRound(roundNum) {
     balls.push({
       id: i,
       emoji: ballEmojis[Math.floor(Math.random() * ballEmojis.length)],
+      bounceDelay: Math.random() * 600,
     });
   }
   return { target, balls };
 }
 
-const BallButton = ({ ball, selected, onPress, delay }) => {
+const BallButton = ({ ball, selected, onPress }) => {
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const bounceAnim = useRef(new Animated.Value(0)).current;
+  const wiggleAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.spring(scaleAnim, {
       toValue: 1,
-      delay: delay * 60,
+      delay: ball.id * 50,
       useNativeDriver: true,
       tension: 300,
       friction: 15,
     }).start();
 
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(bounceAnim, { toValue: -8, duration: 1100, useNativeDriver: true }),
-        Animated.timing(bounceAnim, { toValue: 0, duration: 1100, useNativeDriver: true }),
-      ])
-    ).start();
+    setTimeout(() => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(bounceAnim, { toValue: -8, duration: 900 + Math.random() * 400, useNativeDriver: true }),
+          Animated.timing(bounceAnim, { toValue: 0, duration: 900 + Math.random() * 400, useNativeDriver: true }),
+        ])
+      ).start();
+    }, ball.bounceDelay);
   }, []);
 
+  const handlePress = () => {
+    Animated.sequence([
+      Animated.timing(wiggleAnim, { toValue: 1.15, duration: 100, useNativeDriver: true }),
+      Animated.spring(wiggleAnim, { toValue: 1, useNativeDriver: true, tension: 300, friction: 10 }),
+    ]).start();
+    onPress(ball.id);
+  };
+
   return (
-    <Animated.View style={{ transform: [{ scale: scaleAnim }, { translateY: bounceAnim }] }}>
+    <Animated.View style={{
+      transform: [
+        { scale: Animated.multiply(scaleAnim, wiggleAnim.interpolate({ inputRange: [0, 1, 1.15], outputRange: [1, 1, 1.15] })) },
+        { translateY: bounceAnim },
+      ],
+    }}>
       <Pressable
         style={[styles.ball, selected && styles.ballSelected]}
-        onPress={() => onPress(ball.id)}
+        onPress={handlePress}
       >
         <Text style={styles.ballEmoji}>{ball.emoji}</Text>
-        {selected && <Text style={styles.ballCheck}>✓</Text>}
+        {selected && (
+          <View style={styles.ballCheckBadge}>
+            <Text style={styles.ballCheckText}>✓</Text>
+          </View>
+        )}
       </Pressable>
     </Animated.View>
   );
@@ -106,7 +129,6 @@ const BalloonGame = ({ student, onBack }) => {
     <View style={styles.container}>
       <GameHeader round={round} score={score} onBack={onBack} />
 
-      {/* Owl + speech */}
       <View style={styles.owlSection}>
         <View style={styles.speechBubble}>
           <Text style={styles.speechText}>
@@ -119,7 +141,6 @@ const BalloonGame = ({ student, onBack }) => {
         </View>
       </View>
 
-      {/* Ball grid */}
       <View style={styles.ballGrid} key={round}>
         {roundData.balls.map((ball) => (
           <BallButton
@@ -127,12 +148,10 @@ const BalloonGame = ({ student, onBack }) => {
             ball={ball}
             selected={selected.has(ball.id)}
             onPress={handleBallTap}
-            delay={ball.id}
           />
         ))}
       </View>
 
-      {/* Footer: counter + check */}
       <View style={styles.footer}>
         <View style={styles.counter}>
           <Text style={styles.counterCurrent}>{selected.size}</Text>
@@ -147,7 +166,7 @@ const BalloonGame = ({ student, onBack }) => {
         </Pressable>
       </View>
 
-      {feedback && <FeedbackOverlay type={feedback} />}
+      {feedback && <ConfettiOverlay type={feedback} />}
     </View>
   );
 };
@@ -207,8 +226,8 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'center',
     alignContent: 'center',
-    gap: 14,
-    padding: 16,
+    gap: 18,
+    padding: 18,
     backgroundColor: 'rgba(255, 255, 255, 0.3)',
     borderRadius: 28,
     borderWidth: 3,
@@ -217,10 +236,10 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   ball: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
-    backgroundColor: 'rgba(255, 255, 255, 0.65)',
+    width: BALL_SIZE,
+    height: BALL_SIZE,
+    borderRadius: BALL_SIZE / 2,
+    backgroundColor: 'rgba(255, 255, 255, 0.75)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 3,
@@ -232,26 +251,27 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   ballSelected: {
-    backgroundColor: 'rgba(0, 255, 136, 0.2)',
+    backgroundColor: 'rgba(0, 255, 136, 0.25)',
     borderColor: '#00ff88',
   },
   ballEmoji: {
-    fontSize: 30,
+    fontSize: 28,
   },
-  ballCheck: {
+  ballCheckBadge: {
     position: 'absolute',
     top: -6,
     right: -6,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     backgroundColor: '#00ff88',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ballCheckText: {
     color: 'white',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
-    textAlign: 'center',
-    lineHeight: 28,
-    overflow: 'hidden',
   },
   footer: {
     flexDirection: 'row',

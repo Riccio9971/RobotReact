@@ -4,9 +4,11 @@ import * as Haptics from 'expo-haptics';
 import OwlTeacher from './OwlTeacher';
 import GameComplete from './GameComplete';
 
-const { width: SCREEN_W } = Dimensions.get('window');
+const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 const toyEmojis = ['🧸', '🚗', '🪀', '🎠', '🎲', '🧩', '🪁', '🎯', '🏎️', '🎪'];
 const TOTAL_ROUNDS = 5;
+const TOY_SIZE = 70;
+const TOY_MARGIN = 8;
 
 function shuffleArray(arr) {
   const a = [...arr];
@@ -25,14 +27,23 @@ function generateRound(roundNum) {
 
   const count = min + Math.floor(Math.random() * (max - min + 1));
   const fieldW = SCREEN_W - 80;
-  const fieldH = 250;
+  const fieldH = Math.max(200, SCREEN_H * 0.28);
+  const cellSize = TOY_SIZE + TOY_MARGIN * 2;
+  const cols = Math.max(2, Math.floor(fieldW / cellSize));
+  const rows = Math.ceil(count / cols);
+
   const toys = [];
   for (let i = 0; i < count; i++) {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const totalRowItems = Math.min(cols, count - row * cols);
+    const rowOffset = (fieldW - totalRowItems * cellSize) / 2;
     toys.push({
       id: i,
       emoji: toyEmojis[Math.floor(Math.random() * toyEmojis.length)],
-      x: 10 + Math.random() * (fieldW - 90),
-      y: 10 + Math.random() * (fieldH - 90),
+      x: rowOffset + col * cellSize + TOY_MARGIN + Math.random() * 8 - 4,
+      y: (fieldH - rows * cellSize) / 2 + row * cellSize + TOY_MARGIN + Math.random() * 8 - 4,
+      bounceDelay: Math.random() * 800,
     });
   }
 
@@ -47,26 +58,39 @@ function generateRound(roundNum) {
   return { count, toys, choices: shuffleArray([...choices]) };
 }
 
-const ToyButton = ({ toy, tapped, onPress, delay }) => {
+const ToyButton = ({ toy, tapped, onPress }) => {
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const bounceAnim = useRef(new Animated.Value(0)).current;
+  const wiggleAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.spring(scaleAnim, {
       toValue: 1,
-      delay: delay * 80,
+      delay: toy.id * 60,
       useNativeDriver: true,
       tension: 300,
       friction: 15,
     }).start();
 
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(bounceAnim, { toValue: -8, duration: 1100, useNativeDriver: true }),
-        Animated.timing(bounceAnim, { toValue: 0, duration: 1100, useNativeDriver: true }),
-      ])
-    ).start();
+    setTimeout(() => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(bounceAnim, { toValue: -10, duration: 900 + Math.random() * 400, useNativeDriver: true }),
+          Animated.timing(bounceAnim, { toValue: 0, duration: 900 + Math.random() * 400, useNativeDriver: true }),
+        ])
+      ).start();
+    }, toy.bounceDelay);
   }, []);
+
+  const handlePress = () => {
+    Animated.sequence([
+      Animated.timing(wiggleAnim, { toValue: -12, duration: 80, useNativeDriver: true }),
+      Animated.timing(wiggleAnim, { toValue: 12, duration: 80, useNativeDriver: true }),
+      Animated.timing(wiggleAnim, { toValue: -6, duration: 60, useNativeDriver: true }),
+      Animated.timing(wiggleAnim, { toValue: 0, duration: 60, useNativeDriver: true }),
+    ]).start();
+    onPress(toy.id);
+  };
 
   return (
     <Animated.View
@@ -75,16 +99,24 @@ const ToyButton = ({ toy, tapped, onPress, delay }) => {
         {
           left: toy.x,
           top: toy.y,
-          transform: [{ scale: scaleAnim }, { translateY: bounceAnim }],
+          transform: [
+            { scale: scaleAnim },
+            { translateY: bounceAnim },
+            { rotate: wiggleAnim.interpolate({ inputRange: [-12, 12], outputRange: ['-12deg', '12deg'] }) },
+          ],
         },
       ]}
     >
       <Pressable
         style={[styles.toy, tapped && styles.toyTapped]}
-        onPress={() => onPress(toy.id)}
+        onPress={handlePress}
       >
         <Text style={styles.toyEmoji}>{toy.emoji}</Text>
-        {tapped && <Text style={styles.toyCheck}>✓</Text>}
+        {tapped && (
+          <View style={styles.toyCheckBadge}>
+            <Text style={styles.toyCheckText}>✓</Text>
+          </View>
+        )}
       </Pressable>
     </Animated.View>
   );
@@ -133,10 +165,8 @@ const CountingGame = ({ student, onBack }) => {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <GameHeader round={round} score={score} onBack={onBack} />
 
-      {/* Owl + speech */}
       <View style={styles.owlSection}>
         <View style={styles.speechBubble}>
           <Text style={styles.speechText}>Quanti giocattoli ci sono? 🧸</Text>
@@ -147,7 +177,6 @@ const CountingGame = ({ student, onBack }) => {
         </View>
       </View>
 
-      {/* Toy field */}
       <View style={styles.toyField} key={round}>
         {roundData.toys.map((toy) => (
           <ToyButton
@@ -155,12 +184,10 @@ const CountingGame = ({ student, onBack }) => {
             toy={toy}
             tapped={tappedToys.has(toy.id)}
             onPress={handleToyTap}
-            delay={toy.id}
           />
         ))}
       </View>
 
-      {/* Answer buttons */}
       <View style={styles.answers}>
         {roundData.choices.map((num, i) => (
           <AnswerButton
@@ -173,13 +200,13 @@ const CountingGame = ({ student, onBack }) => {
         ))}
       </View>
 
-      {/* Feedback */}
-      {feedback && <FeedbackOverlay type={feedback} />}
+      {feedback && <ConfettiOverlay type={feedback} />}
     </View>
   );
 };
 
-// Shared sub-components for all games
+// --- Shared sub-components for all games ---
+
 export const GameHeader = ({ round, score, onBack }) => (
   <View style={styles.header}>
     <Pressable style={styles.exitBtn} onPress={onBack}>
@@ -203,11 +230,82 @@ export const GameHeader = ({ round, score, onBack }) => (
   </View>
 );
 
-export const FeedbackOverlay = ({ type }) => {
-  const anim = useRef(new Animated.Value(0)).current;
+const ConfettiPiece = ({ delay, startX, color, size }) => {
+  const fallAnim = useRef(new Animated.Value(0)).current;
+  const swayAnim = useRef(new Animated.Value(0)).current;
+  const spinAnim = useRef(new Animated.Value(0)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.spring(anim, {
+    const swayAmount = 30 + Math.random() * 60;
+    const duration = 1200 + Math.random() * 800;
+
+    setTimeout(() => {
+      Animated.parallel([
+        Animated.timing(fallAnim, {
+          toValue: 1,
+          duration,
+          useNativeDriver: true,
+        }),
+        Animated.sequence([
+          Animated.timing(opacityAnim, { toValue: 1, duration: 100, useNativeDriver: true }),
+          Animated.timing(opacityAnim, { toValue: 1, duration: duration - 300, useNativeDriver: true }),
+          Animated.timing(opacityAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
+        ]),
+        Animated.loop(
+          Animated.sequence([
+            Animated.timing(swayAnim, { toValue: swayAmount, duration: 300, useNativeDriver: true }),
+            Animated.timing(swayAnim, { toValue: -swayAmount, duration: 300, useNativeDriver: true }),
+          ])
+        ),
+        Animated.timing(spinAnim, {
+          toValue: 1,
+          duration,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }, delay);
+  }, []);
+
+  const translateY = fallAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-40, SCREEN_H * 0.6],
+  });
+
+  const rotateDeg = 360 + Math.random() * 720;
+  const rotate = spinAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', `${rotateDeg}deg`],
+  });
+
+  return (
+    <Animated.View
+      style={[
+        styles.confettiPiece,
+        {
+          left: startX,
+          width: size,
+          height: size * (0.4 + Math.random() * 0.6),
+          backgroundColor: color,
+          borderRadius: Math.random() > 0.5 ? size / 2 : 2,
+          opacity: opacityAnim,
+          transform: [
+            { translateY },
+            { translateX: swayAnim },
+            { rotate },
+          ],
+        },
+      ]}
+    />
+  );
+};
+
+export const ConfettiOverlay = ({ type }) => {
+  const scaleAnim = useRef(new Animated.Value(0)).current;
+  const confettiColors = ['#ff6b35', '#7b2fff', '#00ff88', '#ff2d7b', '#00f0ff', '#ffaa00', '#ff4757', '#2ed573'];
+
+  useEffect(() => {
+    Animated.spring(scaleAnim, {
       toValue: 1,
       useNativeDriver: true,
       tension: 200,
@@ -221,15 +319,42 @@ export const FeedbackOverlay = ({ type }) => {
     }
   }, []);
 
+  if (type === 'correct') {
+    const pieces = Array.from({ length: 30 }, (_, i) => ({
+      id: i,
+      delay: Math.random() * 300,
+      startX: Math.random() * SCREEN_W,
+      color: confettiColors[Math.floor(Math.random() * confettiColors.length)],
+      size: 6 + Math.random() * 10,
+    }));
+
+    return (
+      <View style={styles.confettiContainer} pointerEvents="none">
+        {pieces.map((p) => (
+          <ConfettiPiece key={p.id} {...p} />
+        ))}
+        <Animated.View style={[styles.feedbackCenter, { transform: [{ scale: scaleAnim }] }]}>
+          <Text style={styles.feedbackStar}>⭐</Text>
+        </Animated.View>
+      </View>
+    );
+  }
+
   return (
-    <Animated.View style={[styles.feedback, { transform: [{ scale: anim }] }]}>
-      <Text style={styles.feedbackEmoji}>{type === 'correct' ? '🎉' : '🤔'}</Text>
-    </Animated.View>
+    <View style={styles.confettiContainer} pointerEvents="none">
+      <Animated.View style={[styles.feedbackCenter, { transform: [{ scale: scaleAnim }] }]}>
+        <Text style={styles.feedbackWrong}>💪</Text>
+        <Text style={styles.feedbackWrongText}>Riprova!</Text>
+      </Animated.View>
+    </View>
   );
 };
 
+export const FeedbackOverlay = ConfettiOverlay;
+
 const AnswerButton = ({ num, correct, onPress, delay }) => {
   const anim = useRef(new Animated.Value(0)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     Animated.spring(anim, {
@@ -241,11 +366,19 @@ const AnswerButton = ({ num, correct, onPress, delay }) => {
     }).start();
   }, []);
 
+  const handlePress = () => {
+    Animated.sequence([
+      Animated.spring(pulseAnim, { toValue: 0.8, useNativeDriver: true, tension: 400, friction: 10 }),
+      Animated.spring(pulseAnim, { toValue: 1, useNativeDriver: true, tension: 200, friction: 15 }),
+    ]).start();
+    onPress();
+  };
+
   return (
-    <Animated.View style={{ transform: [{ scale: anim }] }}>
+    <Animated.View style={{ transform: [{ scale: Animated.multiply(anim, pulseAnim) }] }}>
       <Pressable
         style={[styles.answerBtn, correct && styles.answerBtnCorrect]}
-        onPress={onPress}
+        onPress={handlePress}
       >
         <Text style={styles.answerBtnText}>{num}</Text>
       </Pressable>
@@ -258,7 +391,6 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
   },
-  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -317,7 +449,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#333',
   },
-  // Owl section
   owlSection: {
     alignItems: 'center',
     gap: 4,
@@ -357,7 +488,6 @@ const styles = StyleSheet.create({
   owlMini: {
     width: 65,
   },
-  // Toy field
   toyField: {
     flex: 1,
     borderRadius: 28,
@@ -367,16 +497,17 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
     marginBottom: 12,
     position: 'relative',
-    minHeight: 250,
+    minHeight: 200,
+    overflow: 'hidden',
   },
   toyWrapper: {
     position: 'absolute',
   },
   toy: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(255, 255, 255, 0.75)',
+    width: TOY_SIZE,
+    height: TOY_SIZE,
+    borderRadius: TOY_SIZE / 2,
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -386,29 +517,29 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   toyTapped: {
-    backgroundColor: 'rgba(0, 255, 136, 0.25)',
+    backgroundColor: 'rgba(0, 255, 136, 0.3)',
     borderWidth: 3,
     borderColor: '#00ff88',
   },
   toyEmoji: {
-    fontSize: 32,
+    fontSize: 28,
   },
-  toyCheck: {
+  toyCheckBadge: {
     position: 'absolute',
     top: -4,
     right: -4,
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     backgroundColor: '#00ff88',
-    color: 'white',
-    fontSize: 14,
-    fontWeight: '700',
-    textAlign: 'center',
-    lineHeight: 26,
-    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  // Answers
+  toyCheckText: {
+    color: 'white',
+    fontSize: 13,
+    fontWeight: '700',
+  },
   answers: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -436,15 +567,38 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: '700',
   },
-  // Feedback
-  feedback: {
-    position: 'absolute',
-    top: '45%',
-    left: '40%',
+  confettiContainer: {
+    ...StyleSheet.absoluteFillObject,
     zIndex: 100,
+    overflow: 'hidden',
   },
-  feedbackEmoji: {
-    fontSize: 80,
+  confettiPiece: {
+    position: 'absolute',
+    top: 0,
+  },
+  feedbackCenter: {
+    position: 'absolute',
+    top: '40%',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  feedbackStar: {
+    fontSize: 60,
+  },
+  feedbackWrong: {
+    fontSize: 50,
+  },
+  feedbackWrongText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#ff6b35',
+    marginTop: 4,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 20,
+    overflow: 'hidden',
   },
 });
 
