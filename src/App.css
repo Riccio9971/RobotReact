@@ -166,12 +166,14 @@
   to { transform: rotate(360deg); }
 }
 
-/* Individual orbit items */
+/* Individual orbit items — centered via margin, NOT transform
+   (framer-motion manages transform, so we can't use translate here) */
 .orbit-item {
   position: absolute;
   width: 80px;
   height: 80px;
-  transform: translate(-50%, -50%);
+  margin-left: -40px;
+  margin-top: -40px;
   cursor: pointer;
 }
 
@@ -224,7 +226,7 @@
     0 0 20px rgba(0, 240, 255, 0.15),
     0 0 40px rgba(0, 240, 255, 0.05),
     inset 0 0 20px rgba(0, 240, 255, 0.05);
-  transform: translate(-50%, -50%) scale(1.15);
+  transform: scale(1.15);
 }
 
 .orbit-item:hover {
@@ -377,6 +379,8 @@
   .orbit-item {
     width: 60px;
     height: 60px;
+    margin-left: -30px;
+    margin-top: -30px;
   }
 
   .orbit-item-icon {
@@ -389,6 +393,6 @@
   }
 
   .orbit-item:hover .orbit-item-inner {
-    transform: translate(-50%, -50%) scale(1.1);
+    transform: scale(1.1);
   }
 }
