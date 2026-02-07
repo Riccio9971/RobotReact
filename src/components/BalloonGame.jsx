@@ -6,14 +6,11 @@ const ballEmojis = ['⚽', '🏀', '🔴', '🟡', '🟢', '🔵', '🟣', '🟠
 const TOTAL_ROUNDS = 5;
 
 function generateRound(roundNum) {
-  // Target: how many balls the child must select
   let min, max;
   if (roundNum <= 2) { min = 1; max = 3; }
   else if (roundNum <= 4) { min = 3; max = 5; }
   else { min = 4; max = 7; }
   const target = min + Math.floor(Math.random() * (max - min + 1));
-
-  // Total balls shown (always more than target)
   const totalBalls = target + 2 + Math.floor(Math.random() * 3);
 
   const balls = [];
@@ -21,13 +18,51 @@ function generateRound(roundNum) {
     balls.push({
       id: i,
       emoji: ballEmojis[Math.floor(Math.random() * ballEmojis.length)],
-      delay: i * 0.08,
-      bounceDelay: Math.random() * 2,
+      bounceDelay: (i * 0.2).toFixed(2),
     });
   }
 
   return { target, balls };
 }
+
+const GameComplete = ({ student, score, onBack }) => {
+  const stars = score >= 4 ? 3 : score >= 2 ? 2 : 1;
+  return (
+    <motion.div
+      className="game-complete"
+      initial={{ scale: 0 }}
+      animate={{ scale: 1 }}
+      transition={{ type: 'spring', stiffness: 150, damping: 12 }}
+    >
+      <OwlTeacher speaking={true} />
+      <div className="game-complete-stars">
+        {[1, 2, 3].map(s => (
+          <motion.span
+            key={s}
+            className={`game-star ${s <= stars ? 'earned' : ''}`}
+            initial={{ scale: 0, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ delay: 0.3 + s * 0.2, type: 'spring', stiffness: 200 }}
+          >
+            {s <= stars ? '⭐' : '☆'}
+          </motion.span>
+        ))}
+      </div>
+      <p className="game-complete-text">
+        Bravo <strong>{student.name}</strong>! 🎉<br />
+        Hai fatto {score} su {TOTAL_ROUNDS}!
+      </p>
+      <motion.button
+        className="game-back-btn"
+        onClick={onBack}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        🏠 Torna ai giochi
+      </motion.button>
+    </motion.div>
+  );
+};
 
 const BalloonGame = ({ student, onBack }) => {
   const [round, setRound] = useState(1);
@@ -51,7 +86,6 @@ const BalloonGame = ({ student, onBack }) => {
 
   const handleCheck = useCallback(() => {
     if (feedback) return;
-
     if (selected.size === roundData.target) {
       setFeedback('correct');
       setScore(s => s + 1);
@@ -73,56 +107,10 @@ const BalloonGame = ({ student, onBack }) => {
   }, [feedback, selected.size, roundData.target, round]);
 
   if (gameOver) {
-    const stars = score >= 4 ? 3 : score >= 2 ? 2 : 1;
     return (
-      <motion.div
-        className="game-container game-balloons"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-      >
-        <motion.div
-          className="game-complete"
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ type: 'spring', stiffness: 150, damping: 12 }}
-        >
-          <OwlTeacher speaking={true} />
-          <div className="game-complete-stars">
-            {[1, 2, 3].map(s => (
-              <motion.span
-                key={s}
-                className={`game-star ${s <= stars ? 'earned' : ''}`}
-                initial={{ scale: 0, rotate: -180 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{ delay: 0.3 + s * 0.2, type: 'spring', stiffness: 200 }}
-              >
-                {s <= stars ? '⭐' : '☆'}
-              </motion.span>
-            ))}
-          </div>
-          <motion.p
-            className="game-complete-text"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1 }}
-          >
-            Bravo <strong>{student.name}</strong>! 🎉
-            <br />
-            Hai fatto {score} su {TOTAL_ROUNDS}!
-          </motion.p>
-          <motion.button
-            className="game-back-btn"
-            onClick={onBack}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.3 }}
-          >
-            🏠 Torna ai giochi
-          </motion.button>
-        </motion.div>
-      </motion.div>
+      <div className="game-container game-balloons">
+        <GameComplete student={student} score={score} onBack={onBack} />
+      </div>
     );
   }
 
@@ -131,90 +119,65 @@ const BalloonGame = ({ student, onBack }) => {
       className="game-container game-balloons"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
     >
       {/* Header */}
       <div className="game-header">
-        <motion.button
-          className="game-exit-btn"
-          onClick={onBack}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          ←
-        </motion.button>
+        <button className="game-exit-btn" onClick={onBack}>←</button>
         <div className="game-progress">
           {Array.from({ length: TOTAL_ROUNDS }, (_, i) => (
-            <div
-              key={i}
-              className={`game-progress-dot ${i < round - 1 ? 'done' : ''} ${i === round - 1 ? 'current' : ''}`}
-            />
+            <div key={i} className={`game-progress-dot ${i < round - 1 ? 'done' : ''} ${i === round - 1 ? 'current' : ''}`} />
           ))}
         </div>
         <div className="game-score">⭐ {score}</div>
       </div>
 
-      {/* Owl + target number */}
-      <div className="game-owl-bar">
-        <div className="game-owl-mini">
-          <OwlTeacher speaking={speaking} />
-        </div>
+      {/* Speech above owl */}
+      <div className="game-owl-section">
         <motion.div
-          className="speech-bubble game-speech-mini"
+          className="speech-bubble game-speech"
           key={round}
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ type: 'spring', stiffness: 200, damping: 18 }}
         >
           <p className="speech-text">
             Prendi <strong className="target-number">{roundData.target}</strong> palloni! ⚽
           </p>
-          <div className="speech-bubble-arrow arrow-left" />
+          <div className="speech-bubble-arrow-down" />
         </motion.div>
+        <div className="game-owl-mini">
+          <OwlTeacher speaking={speaking} />
+        </div>
       </div>
 
-      {/* Ball grid */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          className="balloon-grid"
-          key={round}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-        >
-          {roundData.balls.map((ball) => (
-            <motion.button
-              key={ball.id}
-              className={`balloon-ball ${selected.has(ball.id) ? 'selected' : ''}`}
-              onClick={() => handleBallTap(ball.id)}
-              initial={{ scale: 0 }}
-              animate={{
-                scale: 1,
-                y: [0, -8, 0],
-              }}
-              transition={{
-                scale: { delay: ball.delay, type: 'spring', stiffness: 300 },
-                y: { duration: 1.8, repeat: Infinity, ease: 'easeInOut', delay: ball.bounceDelay },
-              }}
-              whileTap={{ scale: 1.2 }}
-            >
-              <span className="balloon-emoji">{ball.emoji}</span>
-              {selected.has(ball.id) && (
-                <motion.span
-                  className="balloon-check"
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: 'spring', stiffness: 400 }}
-                >
-                  ✓
-                </motion.span>
-              )}
-            </motion.button>
-          ))}
-        </motion.div>
-      </AnimatePresence>
+      {/* Ball grid — CSS bounce */}
+      <div className="balloon-grid" key={round}>
+        {roundData.balls.map((ball) => (
+          <motion.button
+            key={`${round}-${ball.id}`}
+            className={`balloon-ball play-bounce ${selected.has(ball.id) ? 'selected' : ''}`}
+            style={{ animationDelay: `${ball.bounceDelay}s` }}
+            onClick={() => handleBallTap(ball.id)}
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: ball.id * 0.06, type: 'spring', stiffness: 300 }}
+            whileTap={{ scale: 1.2 }}
+          >
+            <span className="balloon-emoji">{ball.emoji}</span>
+            {selected.has(ball.id) && (
+              <motion.span
+                className="balloon-check"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', stiffness: 400 }}
+              >
+                ✓
+              </motion.span>
+            )}
+          </motion.button>
+        ))}
+      </div>
 
-      {/* Selected count + check button */}
+      {/* Counter + check */}
       <div className="balloon-footer">
         <div className="balloon-counter">
           <span className="balloon-counter-current">{selected.size}</span>
@@ -222,13 +185,10 @@ const BalloonGame = ({ student, onBack }) => {
           <span className="balloon-counter-target">{roundData.target}</span>
         </div>
         <motion.button
-          className="balloon-check-btn"
+          className={`balloon-check-btn ${selected.size === roundData.target ? 'ready' : ''}`}
           onClick={handleCheck}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          animate={{
-            backgroundColor: selected.size === roundData.target ? '#00ff88' : '#ddd',
-          }}
         >
           ✓ Fatto!
         </motion.button>
@@ -237,26 +197,10 @@ const BalloonGame = ({ student, onBack }) => {
       {/* Feedback */}
       <AnimatePresence>
         {feedback === 'correct' && (
-          <motion.div
-            className="game-feedback correct"
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 300 }}
-          >
-            🎉
-          </motion.div>
+          <motion.div className="game-feedback" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0, opacity: 0 }}>🎉</motion.div>
         )}
         {feedback === 'wrong' && (
-          <motion.div
-            className="game-feedback wrong"
-            initial={{ scale: 0 }}
-            animate={{ scale: 1, x: [0, -10, 10, -10, 0] }}
-            exit={{ scale: 0, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 300 }}
-          >
-            🤔
-          </motion.div>
+          <motion.div className="game-feedback" initial={{ scale: 0 }} animate={{ scale: 1, x: [0, -10, 10, -10, 0] }} exit={{ scale: 0, opacity: 0 }}>🤔</motion.div>
         )}
       </AnimatePresence>
     </motion.div>

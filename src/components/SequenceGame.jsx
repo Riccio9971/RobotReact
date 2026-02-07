@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import OwlTeacher from './OwlTeacher';
 
@@ -16,17 +16,11 @@ function shuffleArray(arr) {
 }
 
 function generateRound(roundNum) {
-  // Start with 3 items, increase to 5
   const count = Math.min(3 + Math.floor((roundNum - 1) / 2), 5);
-
-  // Create ordered numbers 1..count
   const numbers = Array.from({ length: count }, (_, i) => i + 1);
-
-  // Shuffled version for display
   const shuffled = shuffleArray(numbers);
 
-  // Pick random emoji + color for each
-  const items = shuffled.map((num, i) => ({
+  const items = shuffled.map((num) => ({
     id: `${roundNum}-${num}`,
     number: num,
     emoji: dollEmojis[(num - 1) % dollEmojis.length],
@@ -36,105 +30,97 @@ function generateRound(roundNum) {
   return { count, items, correctOrder: numbers };
 }
 
+const GameComplete = ({ student, score, onBack }) => {
+  const stars = score >= 4 ? 3 : score >= 2 ? 2 : 1;
+  return (
+    <motion.div
+      className="game-complete"
+      initial={{ scale: 0 }}
+      animate={{ scale: 1 }}
+      transition={{ type: 'spring', stiffness: 150, damping: 12 }}
+    >
+      <OwlTeacher speaking={true} />
+      <div className="game-complete-stars">
+        {[1, 2, 3].map(s => (
+          <motion.span
+            key={s}
+            className={`game-star ${s <= stars ? 'earned' : ''}`}
+            initial={{ scale: 0, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ delay: 0.3 + s * 0.2, type: 'spring', stiffness: 200 }}
+          >
+            {s <= stars ? '⭐' : '☆'}
+          </motion.span>
+        ))}
+      </div>
+      <p className="game-complete-text">
+        Bravo <strong>{student.name}</strong>! 🎉<br />
+        Hai fatto {score} su {TOTAL_ROUNDS}!
+      </p>
+      <motion.button
+        className="game-back-btn"
+        onClick={onBack}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        🏠 Torna ai giochi
+      </motion.button>
+    </motion.div>
+  );
+};
+
 const SequenceGame = ({ student, onBack }) => {
   const [round, setRound] = useState(1);
   const [score, setScore] = useState(0);
-  const [placed, setPlaced] = useState([]); // numbers placed in order
-  const [feedback, setFeedback] = useState(null);
+  const [placed, setPlaced] = useState([]);
   const [wrongId, setWrongId] = useState(null);
   const [speaking, setSpeaking] = useState(false);
   const [gameOver, setGameOver] = useState(false);
+  const [transitioning, setTransitioning] = useState(false);
+  const timeoutsRef = useRef([]);
 
   const roundData = useMemo(() => generateRound(round), [round]);
 
-  const nextExpected = placed.length + 1;
-
   const handleItemTap = useCallback((item) => {
-    if (feedback === 'correct') return;
+    if (transitioning) return;
+
+    const nextExpected = placed.length + 1;
 
     if (item.number === nextExpected) {
       const newPlaced = [...placed, item.number];
       setPlaced(newPlaced);
       setWrongId(null);
 
-      // Check if round complete
       if (newPlaced.length === roundData.count) {
-        setFeedback('correct');
+        setTransitioning(true);
         setScore(s => s + 1);
         setSpeaking(true);
-        setTimeout(() => setSpeaking(false), 1200);
-        setTimeout(() => {
+
+        const t1 = setTimeout(() => setSpeaking(false), 1200);
+        const t2 = setTimeout(() => {
           if (round >= TOTAL_ROUNDS) {
             setGameOver(true);
           } else {
             setRound(r => r + 1);
             setPlaced([]);
-            setFeedback(null);
+            setTransitioning(false);
           }
         }, 1500);
+
+        timeoutsRef.current = [t1, t2];
       }
     } else {
-      // Wrong tap — shake
       setWrongId(item.id);
-      setFeedback('wrong');
-      setTimeout(() => {
-        setWrongId(null);
-        setFeedback(null);
-      }, 600);
+      const t = setTimeout(() => setWrongId(null), 600);
+      timeoutsRef.current = [t];
     }
-  }, [feedback, nextExpected, placed, roundData.count, round]);
+  }, [placed, roundData.count, round, transitioning]);
 
   if (gameOver) {
-    const stars = score >= 4 ? 3 : score >= 2 ? 2 : 1;
     return (
-      <motion.div
-        className="game-container game-sequence"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-      >
-        <motion.div
-          className="game-complete"
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ type: 'spring', stiffness: 150, damping: 12 }}
-        >
-          <OwlTeacher speaking={true} />
-          <div className="game-complete-stars">
-            {[1, 2, 3].map(s => (
-              <motion.span
-                key={s}
-                className={`game-star ${s <= stars ? 'earned' : ''}`}
-                initial={{ scale: 0, rotate: -180 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{ delay: 0.3 + s * 0.2, type: 'spring', stiffness: 200 }}
-              >
-                {s <= stars ? '⭐' : '☆'}
-              </motion.span>
-            ))}
-          </div>
-          <motion.p
-            className="game-complete-text"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1 }}
-          >
-            Bravo <strong>{student.name}</strong>! 🎉
-            <br />
-            Hai fatto {score} su {TOTAL_ROUNDS}!
-          </motion.p>
-          <motion.button
-            className="game-back-btn"
-            onClick={onBack}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.3 }}
-          >
-            🏠 Torna ai giochi
-          </motion.button>
-        </motion.div>
-      </motion.div>
+      <div className="game-container game-sequence">
+        <GameComplete student={student} score={score} onBack={onBack} />
+      </div>
     );
   }
 
@@ -143,57 +129,44 @@ const SequenceGame = ({ student, onBack }) => {
       className="game-container game-sequence"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
     >
       {/* Header */}
       <div className="game-header">
-        <motion.button
-          className="game-exit-btn"
-          onClick={onBack}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          ←
-        </motion.button>
+        <button className="game-exit-btn" onClick={onBack}>←</button>
         <div className="game-progress">
           {Array.from({ length: TOTAL_ROUNDS }, (_, i) => (
-            <div
-              key={i}
-              className={`game-progress-dot ${i < round - 1 ? 'done' : ''} ${i === round - 1 ? 'current' : ''}`}
-            />
+            <div key={i} className={`game-progress-dot ${i < round - 1 ? 'done' : ''} ${i === round - 1 ? 'current' : ''}`} />
           ))}
         </div>
         <div className="game-score">⭐ {score}</div>
       </div>
 
-      {/* Owl instruction */}
-      <div className="game-owl-bar">
-        <div className="game-owl-mini">
-          <OwlTeacher speaking={speaking} />
-        </div>
+      {/* Speech above owl */}
+      <div className="game-owl-section">
         <motion.div
-          className="speech-bubble game-speech-mini"
+          className="speech-bubble game-speech"
           key={round}
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ type: 'spring', stiffness: 200, damping: 18 }}
         >
-          <p className="speech-text">Metti in fila le bambole! 🎎<br />Tocca 1, poi 2, poi 3...</p>
-          <div className="speech-bubble-arrow arrow-left" />
+          <p className="speech-text">Metti in fila! 🎎 Tocca 1, poi 2, poi 3...</p>
+          <div className="speech-bubble-arrow-down" />
         </motion.div>
+        <div className="game-owl-mini">
+          <OwlTeacher speaking={speaking} />
+        </div>
       </div>
 
-      {/* Placed slots at top */}
-      <div className="sequence-slots">
+      {/* Target slots */}
+      <div className="sequence-slots" key={`slots-${round}`}>
         {roundData.correctOrder.map((num) => {
           const isPlaced = placed.includes(num);
           const item = roundData.items.find(it => it.number === num);
           return (
-            <motion.div
-              key={num}
+            <div
+              key={`${round}-slot-${num}`}
               className={`sequence-slot ${isPlaced ? 'filled' : ''}`}
               style={{ '--slot-color': item.color }}
-              layout
             >
               {isPlaced ? (
                 <motion.div
@@ -208,62 +181,39 @@ const SequenceGame = ({ student, onBack }) => {
               ) : (
                 <span className="sequence-slot-placeholder">{num}</span>
               )}
-            </motion.div>
+            </div>
           );
         })}
       </div>
 
-      {/* Shuffled items to tap */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          className="sequence-items"
-          key={round}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-        >
-          {roundData.items.map((item, i) => {
-            const isPlaced = placed.includes(item.number);
-            if (isPlaced) return null;
-            return (
-              <motion.button
-                key={item.id}
-                className={`sequence-item ${wrongId === item.id ? 'wrong-shake' : ''}`}
-                style={{ '--item-color': item.color }}
-                onClick={() => handleItemTap(item)}
-                initial={{ scale: 0, y: 30 }}
-                animate={{
-                  scale: 1,
-                  y: [0, -5, 0],
-                }}
-                transition={{
-                  scale: { delay: i * 0.1, type: 'spring', stiffness: 250 },
-                  y: { duration: 2, repeat: Infinity, ease: 'easeInOut', delay: i * 0.3 },
-                }}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                layout
-              >
-                <span className="sequence-item-emoji">{item.emoji}</span>
-                <span className="sequence-item-num">{item.number}</span>
-              </motion.button>
-            );
-          })}
-        </motion.div>
-      </AnimatePresence>
+      {/* Tappable items — no AnimatePresence mode="wait", no layout */}
+      <div className="sequence-items" key={`items-${round}`}>
+        {roundData.items.map((item, i) => {
+          const isPlaced = placed.includes(item.number);
+          if (isPlaced) return null;
+          return (
+            <motion.button
+              key={item.id}
+              className={`sequence-item play-bounce ${wrongId === item.id ? 'wrong-shake' : ''}`}
+              style={{ '--item-color': item.color, animationDelay: `${i * 0.25}s` }}
+              onClick={() => handleItemTap(item)}
+              initial={{ scale: 0, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              transition={{ delay: i * 0.1, type: 'spring', stiffness: 250 }}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+            >
+              <span className="sequence-item-emoji">{item.emoji}</span>
+              <span className="sequence-item-num">{item.number}</span>
+            </motion.button>
+          );
+        })}
+      </div>
 
       {/* Feedback */}
       <AnimatePresence>
-        {feedback === 'correct' && (
-          <motion.div
-            className="game-feedback correct"
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 300 }}
-          >
-            🎉
-          </motion.div>
+        {transitioning && (
+          <motion.div className="game-feedback" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0, opacity: 0 }}>🎉</motion.div>
         )}
       </AnimatePresence>
     </motion.div>

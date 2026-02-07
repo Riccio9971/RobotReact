@@ -1,38 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import OwlTeacher from './OwlTeacher';
 
 const activities = [
   {
     id: 'counting',
-    emoji: '🧸',
     items: ['🧸', '🚗', '🎲'],
     title: 'Conta!',
-    color: '#ff6b35',
     bg: 'linear-gradient(135deg, #ff6b35, #ff9a5c)',
   },
   {
     id: 'balloons',
-    emoji: '⚽',
     items: ['⚽', '🏀', '🎾'],
     title: 'Prendi!',
-    color: '#7b2fff',
     bg: 'linear-gradient(135deg, #7b2fff, #b388ff)',
   },
   {
     id: 'sequence',
-    emoji: '🎎',
     items: ['🎎', '🎀', '🌸'],
     title: 'In fila!',
-    color: '#ff2d7b',
     bg: 'linear-gradient(135deg, #ff2d7b, #ff6eb4)',
   },
   {
     id: 'compare',
-    emoji: '🐻',
     items: ['🐻', '🐰', '🦊'],
     title: 'Di più!',
-    color: '#00b894',
     bg: 'linear-gradient(135deg, #00b894, #55efc4)',
   },
 ];
@@ -54,8 +46,21 @@ const MathActivities = ({ student, onSelectActivity }) => {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.4 }}
     >
-      {/* Owl greeting */}
+      {/* Speech bubble ABOVE owl */}
       <div className="activities-header">
+        <motion.div
+          className="speech-bubble activities-speech"
+          initial={{ opacity: 0, scale: 0.8, y: 10 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ type: 'spring', stiffness: 200, damping: 18, delay: 0.2 }}
+        >
+          <p className="speech-text">
+            Bene <strong>{student.name}</strong>! 🌟
+            <br />
+            A cosa vuoi giocare?
+          </p>
+          <div className="speech-bubble-arrow-down" />
+        </motion.div>
         <motion.div
           className="activities-owl"
           initial={{ scale: 0, rotate: -15 }}
@@ -63,19 +68,6 @@ const MathActivities = ({ student, onSelectActivity }) => {
           transition={{ type: 'spring', stiffness: 120, damping: 12 }}
         >
           <OwlTeacher speaking={speaking} />
-        </motion.div>
-        <motion.div
-          className="speech-bubble activities-speech"
-          initial={{ opacity: 0, scale: 0.8, y: 10 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{ type: 'spring', stiffness: 200, damping: 18, delay: 0.3 }}
-        >
-          <p className="speech-text">
-            Bene <strong>{student.name}</strong>! 🌟
-            <br />
-            A cosa vuoi giocare?
-          </p>
-          <div className="speech-bubble-arrow" />
         </motion.div>
       </div>
 
@@ -90,7 +82,7 @@ const MathActivities = ({ student, onSelectActivity }) => {
           <motion.button
             key={act.id}
             className="activity-card"
-            style={{ '--card-bg': act.bg, '--card-color': act.color }}
+            style={{ '--card-bg': act.bg }}
             onClick={() => onSelectActivity(act.id)}
             initial={{ opacity: 0, scale: 0, rotate: -10 }}
             animate={{ opacity: 1, scale: 1, rotate: 0 }}
@@ -105,22 +97,13 @@ const MathActivities = ({ student, onSelectActivity }) => {
           >
             <div className="activity-card-emojis">
               {act.items.map((e, j) => (
-                <motion.span
+                <span
                   key={j}
-                  className="activity-card-emoji"
-                  animate={{
-                    y: [0, -4, 0],
-                    rotate: [0, j % 2 === 0 ? 8 : -8, 0],
-                  }}
-                  transition={{
-                    duration: 2 + j * 0.3,
-                    repeat: Infinity,
-                    ease: 'easeInOut',
-                    delay: j * 0.2,
-                  }}
+                  className="activity-card-emoji play-bounce"
+                  style={{ animationDelay: `${j * 0.3}s` }}
                 >
                   {e}
-                </motion.span>
+                </span>
               ))}
             </div>
             <span className="activity-card-title">{act.title}</span>
