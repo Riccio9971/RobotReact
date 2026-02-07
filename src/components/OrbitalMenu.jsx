@@ -68,18 +68,16 @@ const OrbitalMenu = () => {
 
   return (
     <div className="orbital-wrapper">
-      {/* Decorative orbital rings */}
-      <div className="orbital-ring" />
+      {/* Decorative orbital rings — only outer + mid */}
       <div className="orbital-ring" />
       <div className="orbital-ring" />
 
-      {/* Orbit path with items */}
+      {/* Orbit path with items on outermost ring */}
       <div className="orbit-path">
         {menuItems.map((item, index) => {
           const angleDeg = (360 / itemCount) * index;
           const angleRad = (angleDeg * Math.PI) / 180;
-          // Position items on circular path using percentage of parent
-          const radius = 42; // percent
+          const radius = 48; // percent — outermost orbit
           const left = 50 + Math.sin(angleRad) * radius;
           const top = 50 - Math.cos(angleRad) * radius;
 
