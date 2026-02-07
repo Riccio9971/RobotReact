@@ -1,10 +1,13 @@
-import React, { useMemo } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import MathOnboarding from './MathOnboarding';
 
 const floatingNumbers = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '+', '-', '×', '÷', '='];
 const colors = ['#ff6b35', '#ff2d7b', '#7b2fff', '#00f0ff', '#00ff88', '#ffaa00', '#ff4757', '#2ed573'];
 
 const MathPage = ({ onBack }) => {
+  const [student, setStudent] = useState(null); // null = onboarding
+
   const numbers = useMemo(() => {
     return Array.from({ length: 25 }, (_, i) => ({
       id: i,
@@ -18,6 +21,10 @@ const MathPage = ({ onBack }) => {
       rotate: Math.random() * 360,
     }));
   }, []);
+
+  const handleOnboardingComplete = (data) => {
+    setStudent(data);
+  };
 
   return (
     <motion.div
@@ -70,65 +77,77 @@ const MathPage = ({ onBack }) => {
         ← Torna a Robot
       </motion.button>
 
-      {/* Main content */}
-      <div className="math-content">
-        <motion.div
-          className="math-hero-emoji"
-          initial={{ scale: 0, rotate: -180 }}
-          animate={{ scale: 1, rotate: 0 }}
-          transition={{ type: 'spring', stiffness: 150, damping: 12, delay: 0.2 }}
-        >
-          🔢
-        </motion.div>
-
-        <motion.h1
-          className="math-title"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
-          Matematica
-        </motion.h1>
-
-        <motion.p
-          className="math-subtitle"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-        >
-          Impariamo i numeri giocando!
-        </motion.p>
-
-        {/* Number grid */}
-        <motion.div
-          className="math-number-grid"
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8 }}
-        >
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((num, i) => (
-            <motion.button
-              key={num}
-              className="math-number-btn"
-              style={{
-                '--btn-color': colors[i % colors.length],
-              }}
-              whileHover={{ scale: 1.15, rotate: [0, -5, 5, 0] }}
-              whileTap={{ scale: 0.9 }}
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{
-                delay: 0.9 + i * 0.08,
-                type: 'spring',
-                stiffness: 250,
-                damping: 15,
-              }}
+      <AnimatePresence mode="wait">
+        {!student ? (
+          /* ===== ONBOARDING ===== */
+          <MathOnboarding key="onboarding" onComplete={handleOnboardingComplete} />
+        ) : (
+          /* ===== MATH CONTENT ===== */
+          <motion.div
+            key="content"
+            className="math-content"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <motion.div
+              className="math-hero-emoji"
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: 'spring', stiffness: 150, damping: 12, delay: 0.2 }}
             >
-              {num}
-            </motion.button>
-          ))}
-        </motion.div>
-      </div>
+              🔢
+            </motion.div>
+
+            <motion.h1
+              className="math-title"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              Ciao {student.name}!
+            </motion.h1>
+
+            <motion.p
+              className="math-subtitle"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+            >
+              {student.difficulty} — Impariamo i numeri giocando!
+            </motion.p>
+
+            {/* Number grid */}
+            <motion.div
+              className="math-number-grid"
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+            >
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((num, i) => (
+                <motion.button
+                  key={num}
+                  className="math-number-btn"
+                  style={{ '--btn-color': colors[i % colors.length] }}
+                  whileHover={{ scale: 1.15, rotate: [0, -5, 5, 0] }}
+                  whileTap={{ scale: 0.9 }}
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{
+                    delay: 0.7 + i * 0.08,
+                    type: 'spring',
+                    stiffness: 250,
+                    damping: 15,
+                  }}
+                >
+                  {num}
+                </motion.button>
+              ))}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

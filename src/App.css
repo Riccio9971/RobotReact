@@ -531,3 +531,169 @@
     border-radius: 14px;
   }
 }
+
+/* ===== ONBOARDING ===== */
+.onboarding {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  width: 100%;
+  padding: 20px;
+}
+
+.onboarding-scene {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  max-width: 500px;
+  width: 100%;
+}
+
+.onboarding-dialogue {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+}
+
+/* Speech bubble */
+.speech-bubble {
+  position: relative;
+  background: white;
+  border-radius: 24px;
+  padding: 20px 28px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+}
+
+.speech-bubble-arrow {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 14px solid transparent;
+  border-right: 14px solid transparent;
+  border-bottom: 14px solid white;
+}
+
+.speech-text {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 500;
+  color: #333;
+  line-height: 1.6;
+}
+
+.speech-text strong {
+  color: #ff6b35;
+  font-weight: 700;
+}
+
+/* Name input */
+.onboarding-input-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+}
+
+.onboarding-text-input {
+  width: 100%;
+  max-width: 320px;
+  padding: 14px 20px;
+  border: 3px solid #eee;
+  border-radius: 50px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 600;
+  text-align: center;
+  color: #333;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.onboarding-text-input:focus {
+  border-color: #ff6b35;
+}
+
+.onboarding-text-input::placeholder {
+  color: #bbb;
+  font-weight: 400;
+}
+
+.onboarding-submit-btn {
+  padding: 12px 36px;
+  border: none;
+  border-radius: 50px;
+  background: linear-gradient(135deg, #ff6b35, #ff2d7b);
+  color: white;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+  transition: opacity 0.2s;
+}
+
+.onboarding-submit-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Age selection grid */
+.onboarding-age-grid {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.age-btn {
+  width: 64px;
+  height: 64px;
+  border: none;
+  border-radius: 50%;
+  background: var(--age-color);
+  color: white;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+
+/* Start button */
+.onboarding-start-btn {
+  padding: 16px 48px;
+  border: none;
+  border-radius: 50px;
+  background: linear-gradient(135deg, #00ff88, #00f0ff);
+  color: #1a1a2e;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(0, 255, 136, 0.3);
+}
+
+@media (max-width: 480px) {
+  .speech-text {
+    font-size: 1.1rem;
+  }
+
+  .age-btn {
+    width: 52px;
+    height: 52px;
+    font-size: 1.2rem;
+  }
+}
