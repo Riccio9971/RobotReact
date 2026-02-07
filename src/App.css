@@ -1,2 +1,699 @@
-.App { text-align: center; }
-.App-header { background-color: #282c34; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: calc(10px + 2vmin); color: white; }
+/* ===== MAIN APP ===== */
+.app {
+  width: 100vw;
+  height: 100vh;
+  background: radial-gradient(ellipse at 50% 50%, #0d0d1a 0%, #0a0a0f 60%, #050508 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Ambient light effects */
+.app::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(0, 240, 255, 0.04) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.app::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 240, 255, 0.1), transparent);
+}
+
+/* ===== SCENE: stacking context for robot + orbits ===== */
+.scene {
+  position: relative;
+  width: clamp(380px, 80vmin, 600px);
+  height: clamp(380px, 80vmin, 600px);
+  z-index: 10;
+}
+
+/* Orbital layer: fills the scene, sits behind the robot */
+.orbital-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+/* Center column: robot + text, always on top at dead center */
+.center-column {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.center-column > * {
+  pointer-events: auto;
+}
+
+/* ===== ROBOT CONTAINER ===== */
+.robot-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ===== TYPEWRITER TEXT ===== */
+.typewriter-container {
+  text-align: center;
+  min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.typewriter-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: clamp(1rem, 2.5vw, 1.6rem);
+  font-weight: 700;
+  background: linear-gradient(135deg, #00f0ff 0%, #7b2fff 50%, #ff2d7b 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.typewriter-subtitle {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: clamp(0.8rem, 1.8vw, 1.1rem);
+  color: rgba(224, 224, 255, 0.5);
+  font-weight: 300;
+  letter-spacing: 4px;
+  margin-top: 6px;
+}
+
+.cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: #00f0ff;
+  margin-left: 4px;
+  animation: cursorBlink 0.8s infinite;
+  vertical-align: text-bottom;
+  box-shadow: 0 0 8px #00f0ff;
+}
+
+@keyframes cursorBlink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+/* ===== ORBITAL MENU ===== */
+.orbital-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* Orbital rings — outer (items orbit here) + inner decorative */
+.orbital-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 96%;
+  height: 96%;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 240, 255, 0.08);
+  animation: ringRotate 60s linear infinite;
+}
+
+.orbital-ring:nth-child(2) {
+  width: 60%;
+  height: 60%;
+  border-color: rgba(123, 47, 255, 0.06);
+  animation-duration: 45s;
+  animation-direction: reverse;
+}
+
+@keyframes ringRotate {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* Orbit path for items */
+.orbit-path {
+  position: absolute;
+  inset: 0;
+  animation: orbitSpin 25s linear infinite;
+}
+
+@keyframes orbitSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Individual orbit items — centered via margin, NOT transform
+   (framer-motion manages transform, so we can't use translate here) */
+.orbit-item {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  margin-left: -40px;
+  margin-top: -40px;
+  cursor: pointer;
+}
+
+.orbit-item-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.orbit-item-inner::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0%,
+    rgba(0, 240, 255, 0.05) 25%,
+    transparent 50%,
+    rgba(123, 47, 255, 0.05) 75%,
+    transparent 100%
+  );
+  animation: innerSpin 4s linear infinite;
+  z-index: -1;
+}
+
+@keyframes innerSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.orbit-item:hover .orbit-item-inner {
+  background: rgba(0, 240, 255, 0.08);
+  border-color: rgba(0, 240, 255, 0.3);
+  box-shadow:
+    0 0 20px rgba(0, 240, 255, 0.15),
+    0 0 40px rgba(0, 240, 255, 0.05),
+    inset 0 0 20px rgba(0, 240, 255, 0.05);
+  transform: scale(1.15);
+}
+
+.orbit-item:hover {
+  z-index: 100;
+}
+
+.orbit-item-emoji {
+  font-size: 28px;
+  line-height: 1;
+  filter: drop-shadow(0 0 6px rgba(255,255,255,0.3));
+}
+
+.orbit-item-label {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 8px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: rgba(224, 224, 255, 0.6);
+  transition: color 0.3s ease;
+  white-space: nowrap;
+}
+
+.orbit-item:hover .orbit-item-label {
+  color: #00f0ff;
+}
+
+/* Counter-rotate items so they stay upright */
+.orbit-item-content {
+  animation: counterSpin 25s linear infinite;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+@keyframes counterSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-360deg); }
+}
+
+/* ===== SCAN LINE EFFECT ===== */
+.scanline {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 999;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.015) 2px,
+    rgba(0, 0, 0, 0.015) 4px
+  );
+}
+
+.scanline::after {
+  content: '';
+  position: absolute;
+  top: -100%;
+  left: 0;
+  right: 0;
+  height: 100%;
+  background: linear-gradient(
+    0deg,
+    transparent 0%,
+    rgba(0, 240, 255, 0.02) 50%,
+    transparent 100%
+  );
+  animation: scanDown 8s linear infinite;
+}
+
+@keyframes scanDown {
+  from { top: -100%; }
+  to { top: 200%; }
+}
+
+/* ===== VIGNETTE ===== */
+.vignette {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 998;
+  background: radial-gradient(ellipse at center, transparent 50%, rgba(0, 0, 0, 0.5) 100%);
+}
+
+/* ===== FLOATING PARTICLES (CSS) ===== */
+.css-particles {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+  overflow: hidden;
+}
+
+.css-particle {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: #00f0ff;
+  border-radius: 50%;
+  box-shadow: 0 0 6px #00f0ff, 0 0 12px rgba(0, 240, 255, 0.3);
+  animation: floatUp linear infinite;
+  opacity: 0;
+}
+
+@keyframes floatUp {
+  0% {
+    opacity: 0;
+    transform: translateY(100vh) scale(0);
+  }
+  10% {
+    opacity: 0.6;
+  }
+  90% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-10vh) scale(1);
+  }
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-height: 600px) {
+  .scene {
+    width: clamp(300px, 70vmin, 450px);
+    height: clamp(300px, 70vmin, 450px);
+  }
+}
+
+@media (max-width: 480px) {
+  .orbit-item {
+    width: 60px;
+    height: 60px;
+    margin-left: -30px;
+    margin-top: -30px;
+  }
+
+  .orbit-item-icon {
+    width: 22px;
+    height: 22px;
+  }
+
+  .orbit-item-label {
+    font-size: 6px;
+  }
+
+  .orbit-item-emoji {
+    font-size: 22px;
+  }
+
+  .orbit-item:hover .orbit-item-inner {
+    transform: scale(1.1);
+  }
+}
+
+/* ===== MATH PAGE ===== */
+.math-page {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: linear-gradient(135deg, #fff5e6 0%, #ffe0f0 25%, #e0f0ff 50%, #e6ffe6 75%, #fff5e6 100%);
+  background-size: 400% 400%;
+  animation: mathBgShift 12s ease infinite;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: hidden;
+}
+
+@keyframes mathBgShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Floating numbers background */
+.math-floating-numbers {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.math-float-num {
+  position: absolute;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  user-select: none;
+}
+
+/* Back button */
+.math-back-btn {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50px;
+  padding: 10px 24px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.math-back-btn:hover {
+  background: rgba(255, 255, 255, 1);
+}
+
+/* Main content */
+.math-content {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: 16px;
+  padding: 80px 20px 40px;
+}
+
+.math-hero-emoji {
+  font-size: 5rem;
+  line-height: 1;
+  filter: drop-shadow(0 4px 12px rgba(255, 107, 53, 0.3));
+}
+
+.math-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: clamp(2rem, 6vw, 3.5rem);
+  font-weight: 800;
+  background: linear-gradient(135deg, #ff6b35, #ff2d7b, #7b2fff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-align: center;
+}
+
+.math-subtitle {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: clamp(1.1rem, 3vw, 1.5rem);
+  color: #555;
+  font-weight: 500;
+  text-align: center;
+}
+
+/* Number grid */
+.math-number-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  margin-top: 20px;
+  max-width: 450px;
+}
+
+.math-number-btn {
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  border: none;
+  background: var(--btn-color);
+  color: #fff;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  transition: box-shadow 0.2s;
+}
+
+.math-number-btn:hover {
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.25);
+}
+
+@media (max-width: 480px) {
+  .math-number-grid {
+    gap: 10px;
+  }
+
+  .math-number-btn {
+    width: 56px;
+    height: 56px;
+    font-size: 1.4rem;
+    border-radius: 14px;
+  }
+}
+
+/* ===== ONBOARDING ===== */
+.onboarding {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  width: 100%;
+  padding: 20px;
+}
+
+.onboarding-scene {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  max-width: 500px;
+  width: 100%;
+}
+
+.onboarding-dialogue {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+}
+
+/* Speech bubble */
+.speech-bubble {
+  position: relative;
+  background: white;
+  border-radius: 24px;
+  padding: 20px 28px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+}
+
+.speech-bubble-arrow {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 14px solid transparent;
+  border-right: 14px solid transparent;
+  border-bottom: 14px solid white;
+}
+
+.speech-text {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 500;
+  color: #333;
+  line-height: 1.6;
+}
+
+.speech-text strong {
+  color: #ff6b35;
+  font-weight: 700;
+}
+
+/* Name input */
+.onboarding-input-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+}
+
+.onboarding-text-input {
+  width: 100%;
+  max-width: 320px;
+  padding: 14px 20px;
+  border: 3px solid #eee;
+  border-radius: 50px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 600;
+  text-align: center;
+  color: #333;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.onboarding-text-input:focus {
+  border-color: #ff6b35;
+}
+
+.onboarding-text-input::placeholder {
+  color: #bbb;
+  font-weight: 400;
+}
+
+.onboarding-submit-btn {
+  padding: 12px 36px;
+  border: none;
+  border-radius: 50px;
+  background: linear-gradient(135deg, #ff6b35, #ff2d7b);
+  color: white;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+  transition: opacity 0.2s;
+}
+
+.onboarding-submit-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Age selection grid */
+.onboarding-age-grid {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.age-btn {
+  width: 64px;
+  height: 64px;
+  border: none;
+  border-radius: 50%;
+  background: var(--age-color);
+  color: white;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+
+/* Start button */
+.onboarding-start-btn {
+  padding: 16px 48px;
+  border: none;
+  border-radius: 50px;
+  background: linear-gradient(135deg, #00ff88, #00f0ff);
+  color: #1a1a2e;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(0, 255, 136, 0.3);
+}
+
+@media (max-width: 480px) {
+  .speech-text {
+    font-size: 1.1rem;
+  }
+
+  .age-btn {
+    width: 52px;
+    height: 52px;
+    font-size: 1.2rem;
+  }
+}
