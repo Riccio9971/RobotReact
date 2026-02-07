@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import OwlTeacher from './OwlTeacher';
 
-const ageGroups = [3, 4, 5, 6, 7, 8];
-const ageColors = ['#ff6b35', '#ff2d7b', '#7b2fff', '#00f0ff', '#00ff88', '#ffaa00'];
+const ageGroups = [5, 6, 7, 8];
+const ageColors = ['#ff6b35', '#7b2fff', '#00f0ff', '#00ff88'];
 
 const getDifficultyLabel = (age) => {
-  if (age <= 4) return 'Piccoli Esploratori';
+  if (age <= 5) return 'Piccoli Esploratori';
   if (age <= 6) return 'Giovani Matematici';
   return 'Super Matematici';
 };
