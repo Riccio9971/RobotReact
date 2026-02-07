@@ -123,7 +123,7 @@ const MathScreen = ({ navigation }) => {
       />
 
       {/* Floating numbers */}
-      <View style={styles.floatingContainer} pointerEvents="none">
+      <View style={[styles.floatingContainer, { pointerEvents: 'none' }]}>
         {numbers.map((n) => (
           <FloatingNumber key={n.id} {...n} />
         ))}

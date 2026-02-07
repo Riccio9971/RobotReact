@@ -68,7 +68,7 @@ const ParticleField = () => {
   }, []);
 
   return (
-    <View style={styles.container} pointerEvents="none">
+    <View style={[styles.container, { pointerEvents: 'none' }]}>
       {particles.map((p) => (
         <Particle key={p.id} {...p} />
       ))}
