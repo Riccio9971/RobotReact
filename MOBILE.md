@@ -13,7 +13,7 @@ e si pubblica tramite **EAS Build**.
 
 | Tecnologia | Ruolo |
 |---|---|
-| **Expo SDK 52** | Framework e toolchain |
+| **Expo SDK 54** | Framework e toolchain |
 | **React Native** | UI nativa |
 | **react-native-svg** | Robot Face e Owl Teacher (SVG) |
 | **React Navigation** | Navigazione tra schermate |
